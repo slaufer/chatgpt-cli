@@ -1,0 +1,184 @@
+#!/usr/bin/python3
+import os
+import sys
+import argparse
+
+from shutil import get_terminal_size
+from openai import OpenAI
+
+from prompt_toolkit import prompt
+
+
+DEFAULT_SYSTEM_PROMPT = "You are ChatGPT, a large language model trained by OpenAI. Carefully heed the user's instructions. Respond using Markdown."
+
+def get_file(file_path):
+  path = os.path.relpath(os.path.abspath(file_path), os.getcwd())
+
+  with open(path, 'r') as file:
+    content = file.read()
+
+  return path, content
+
+class ChatGptCli:
+  def __init__(
+    self,
+    log_file=None,
+    interactive=True,
+    immediate=False,
+    model='gpt-4o',
+    separator = None,
+    intro=True,
+    api_key=None,
+    temperature=None,
+    max_tokens=None,
+    top_p=None,
+    frequency_penalty=None,
+    presence_penalty=None
+  ):
+    self.log_file = log_file
+    self.interactive = interactive
+    self.immediate = immediate
+    self.model = model
+    self.separator = separator
+    self.intro = intro
+    self.client = OpenAI(api_key=api_key)
+    self.temperature = temperature
+    self.max_tokens = max_tokens
+    self.top_p = top_p
+    self.frequency_penalty = frequency_penalty
+    self.presence_penalty = presence_penalty
+    self.messages = []
+
+  def output(self, message, silent=False):
+    if not silent:
+      print(message, end='', flush=True)
+
+    if self.log_file is not None:
+      with open(self.log_file, 'a') as file:
+        file.write(message)
+
+  def get_completion(self):
+    response = self.client.chat.completions.create(
+      messages=self.messages,
+      model=self.model,
+      temperature=self.temperature,
+      max_tokens=self.max_tokens,
+      top_p=self.top_p,
+      frequency_penalty=self.frequency_penalty,
+      presence_penalty=self.presence_penalty
+    )
+    return response.choices[0].message.content
+
+  def get_separator(self):
+    if self.separator is not None:
+      return self.separator
+    
+    return '\n\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n\n'
+
+  def add_chat_message(self, role, content, silent=False):
+    if role == 'file':
+      file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
+      with open(file_path, 'r') as file:
+        file_content = file.read()
+      self.messages.append({"role": "user", "content": f'### FILE: `{file_path}`\n```\n{file_content}\n```'})
+      self.output(f'User:\nFILE: {file_path} (contents hidden)', silent=silent)
+    else:
+      self.messages.append({"role": role, "content": content})
+      self.output(f'{role.capitalize()}:\n{content}', silent=silent)
+    
+    self.output(self.get_separator(), silent=silent)
+
+  def add_messages_from_args(self, args):
+    silent = not self.interactive or not self.intro
+
+    if not any(arg in ('-s', '--system') for arg in args):
+      self.add_chat_message("system", DEFAULT_SYSTEM_PROMPT, silent=silent)
+
+    args_iter = iter(args)
+
+    for arg in args_iter:
+      if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file'):
+        continue
+
+      content = next(args_iter, None)
+
+      if arg in ('-s', '--system'):
+        self.add_chat_message("system", content, silent=silent)
+      elif arg in ('-a', '--assistant'):
+        self.add_chat_message("assistant", content, silent=silent)
+      elif arg in ('-u', '--user'):
+        self.add_chat_message("user", content, silent=silent)
+      elif arg in ('-f', '--file'):
+        self.add_chat_message("file", content, silent=silent)
+
+  def main(self, args):
+    self.add_messages_from_args(args)
+
+    if not self.interactive:
+      response = self.get_completion()
+      self.output(response)
+      return
+    
+    if self.immediate:
+      response = self.get_completion()
+      self.add_chat_message("assistant", response)
+
+    while True:
+      user_input = prompt("User: (Multi-line editor, press alt+enter to submit)\n", multiline=True)
+      self.add_chat_message("user", user_input, silent=True)
+
+      self.output(self.get_separator())
+
+      response = self.get_completion()
+      self.add_chat_message("assistant", response)
+
+
+def main():
+  parser = argparse.ArgumentParser(
+    description='ChatGPT CLI',
+    epilog= "Message arguments are added to the conversation in the order in which they are specified on the command line. Interactive mode uses a multi-line editor, press alt+enter to submit. Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key."
+  )
+
+  # Message arguments
+  # Argparse is just validating these, we parse them manually below
+  parser.add_argument('-s', '--system', action='append', help='Add a system prompt message. If not specified, a default system prompt is used.')
+  parser.add_argument('-a', '--assistant', action='append', help='Add an assistant response message.')
+  parser.add_argument('-u', '--user', action='append', help='Add a user prompt message.')
+  parser.add_argument('-f', '--file', action='append', help='Add a user prompt message from a file.')
+
+  # Model arguments
+  parser.add_argument('--temperature', type=float, help='The sampling temperature to use, between 0 and 1.')
+  parser.add_argument('--max-tokens', type=int, help='The maximum number of tokens to generate in the completion.')
+  parser.add_argument('--top-p', type=float, help='The top-p sampling value to use, between 0 and 1.')
+  parser.add_argument('--frequency-penalty', type=float, help='The frequency penalty to use, between -2.0 and 2.0.')
+  parser.add_argument('--presence-penalty', type=float, help='The presence penalty to use, between -2.0 and 2.0.')
+
+  # Other arguments
+  parser.add_argument('-n', '--non-interactive', action='store_true', help='Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.')
+  parser.add_argument('-l', '--log-file', help='Log output to a specified file.')
+  parser.add_argument('-m', '--model', default='gpt-4o', help='Specify the model to use. (default: gpt-4o)')
+  parser.add_argument('-i', '--immediate', action='store_true', help='Get an assistant response immediately, before entering interactive mode.')
+  parser.add_argument('-x', '--separator', help='Specify the separator to use between messages.')
+  parser.add_argument('-o', '--no-intro', action='store_true', help="Don't print the system prompt, or messages specified on the command line.")
+
+  args = parser.parse_args()
+
+  cli = ChatGptCli(
+    log_file=args.log_file,
+    interactive=not args.non_interactive,
+    model=args.model,
+    immediate=args.immediate,
+    separator=args.separator,
+    intro=not args.no_intro,
+    api_key=os.environ.get("OPENAI_API_KEY"),
+    temperature=args.temperature,
+    max_tokens=args.max_tokens,
+    top_p=args.top_p,
+    frequency_penalty=args.frequency_penalty,
+    presence_penalty=args.presence_penalty
+  )
+
+  cli.main(sys.argv[1:])
+
+if __name__ == "__main__":
+  main()
