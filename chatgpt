@@ -81,10 +81,10 @@ class ChatGptCli:
       with open(file_path, 'r') as file:
         file_content = file.read()
       self.messages.append({"role": "user", "content": f'### FILE: `{file_path}`\n```\n{file_content}\n```'})
-      self.output(f'User:\nFILE: {file_path} (contents hidden)', silent=silent)
+      self.output(f'User:\n\nFILE: {file_path} (contents hidden)', silent=silent)
     else:
       self.messages.append({"role": role, "content": content})
-      self.output(f'{role.capitalize()}:\n{content}', silent=silent)
+      self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
     
     self.output(self.get_separator(), silent=silent)
 
@@ -124,7 +124,7 @@ class ChatGptCli:
       self.add_chat_message("assistant", response)
 
     while True:
-      user_input = prompt("User: (Multi-line editor, press alt+enter to submit)\n", multiline=True)
+      user_input = prompt("User: (Multi-line editor, press Alt+Enter when finished)\n\n", multiline=True)
       self.add_chat_message("user", user_input, silent=True)
 
       self.output(self.get_separator())
