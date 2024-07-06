@@ -30,6 +30,7 @@ class ChatGptCli:
     model='gpt-4o',
     separator = None,
     intro=True,
+    no_system_prompt=False,
     api_key=None,
     temperature=None,
     max_tokens=None,
@@ -44,6 +45,7 @@ class ChatGptCli:
     self.model = model
     self.separator = separator
     self.intro = intro
+    self.no_system_prompt = no_system_prompt
     self.client = OpenAI(api_key=api_key)
     self.temperature = temperature
     self.max_tokens = max_tokens
@@ -127,7 +129,7 @@ class ChatGptCli:
           for message in conversation:
             args_messages.append({"role": message.get('role'), "content": message.get('content')})
 
-    if not any(message.get("role") == "system" for message in args_messages):
+    if not self.no_system_prompt and not any(message.get("role") == "system" for message in args_messages):
       args_messages.insert(0, {"role": "system", "content": DEFAULT_SYSTEM_PROMPT})
 
     for message in args_messages:
@@ -171,7 +173,6 @@ class ChatGptCli:
 def print_help():
   print(f"""
 ChatGPT CLI
------------
 
 This command line interface allows you to interact with the ChatGPT model in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
 
@@ -185,6 +186,7 @@ Options:
   -u, --user <message>         Add a user prompt message.
   -f, --file <filename>        Add a user prompt message from a file.
   -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
+  -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
   MODEL ARGUMENTS:
   -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
@@ -202,15 +204,15 @@ Options:
   -x, --separator <separator>  Specify the separator to use between messages.
   -o, --no-intro               Don't print the system prompt, or messages specified on the command line.
   -h, --help                   Print this help message and exit.
-        
+
 Message arguments are added to the conversation in the order in which they are specified on the command line. If no system prompt is specified, a default prompt will be added.
-        
-Interactive mode uses a multi-line editor, press Alt+Enter to submit, and Ctrl+C or Ctrl+D to exit.
-        
+
+By default, the program begins in interactive mode. Interactive mode uses a multi-line editor, press Alt+Enter to submit, and Ctrl+C or Ctrl+D to exit.
+
 Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key.
-        
+
 TIP: Try `{os.path.basename(sys.argv[0])} -c mylog.json -j mylog.json` to persist conversations between sessions.
-        """)
+        """.strip())
 
 def main():
   parser = argparse.ArgumentParser(
@@ -225,6 +227,7 @@ def main():
   parser.add_argument('-u', '--user', action='append', help='Add a user prompt message.')
   parser.add_argument('-f', '--file', action='append', help='Add a user prompt message from a file.')
   parser.add_argument('-c', '--conversation', action='append', help='Load a previous conversation from a file. (see -j / --log-file-json)')
+  parser.add_argument('-d', '--no-system-prompt', action='store_true', help='Don\'t add a default system prompt if none is present.')
 
   # Model arguments
   parser.add_argument('--temperature', type=float, help='The sampling temperature to use, between 0 and 1.')
@@ -261,6 +264,7 @@ def main():
     immediate=args.immediate,
     separator=args.separator,
     intro=not args.no_intro,
+    no_system_prompt=args.no_system_prompt,
     api_key=os.environ.get("OPENAI_API_KEY"),
     temperature=args.temperature,
     max_tokens=args.max_tokens,
