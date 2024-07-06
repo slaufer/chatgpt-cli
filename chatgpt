@@ -7,7 +7,7 @@ from shutil import get_terminal_size
 from openai import OpenAI
 
 from prompt_toolkit import prompt
-
+from prompt_toolkit.key_binding import KeyBindings
 
 DEFAULT_SYSTEM_PROMPT = "You are ChatGPT, a large language model trained by OpenAI. Carefully heed the user's instructions. Respond using Markdown."
 
@@ -123,8 +123,16 @@ class ChatGptCli:
       response = self.get_completion()
       self.add_chat_message("assistant", response)
 
+    bindings = KeyBindings()
+    bindings.add('c-c')(lambda _: sys.exit(0))
+    bindings.add('c-d')(lambda _: sys.exit(0))
+
     while True:
-      user_input = prompt("User: (Multi-line editor, press Alt+Enter when finished)\n\n", multiline=True)
+      user_input = prompt(
+        "User: (Multi-line editor, press Alt+Enter to submit. Press Ctrl+C or Ctrl+D to exit.)\n\n",
+        multiline=True,
+        key_bindings=bindings
+      )
       self.add_chat_message("user", user_input, silent=True)
 
       self.output(self.get_separator())
@@ -134,6 +142,10 @@ class ChatGptCli:
 
 
 def main():
+  if (os.environ.get("OPENAI_API_KEY") is None):
+    print("Please set the OPENAI_API_KEY environment variable to your OpenAI API key.")
+    sys.exit(1)
+
   parser = argparse.ArgumentParser(
     description='ChatGPT CLI',
     epilog= "Message arguments are added to the conversation in the order in which they are specified on the command line. Interactive mode uses a multi-line editor, press alt+enter to submit. Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key."
