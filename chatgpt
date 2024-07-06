@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 import os
 import sys
+import json
 import argparse
 
 from shutil import get_terminal_size
@@ -23,6 +24,7 @@ class ChatGptCli:
   def __init__(
     self,
     log_file=None,
+    log_file_json=None,
     interactive=True,
     immediate=False,
     model='gpt-4o',
@@ -36,6 +38,7 @@ class ChatGptCli:
     presence_penalty=None
   ):
     self.log_file = log_file
+    self.json_log_file = log_file_json
     self.interactive = interactive
     self.immediate = immediate
     self.model = model
@@ -48,6 +51,12 @@ class ChatGptCli:
     self.frequency_penalty = frequency_penalty
     self.presence_penalty = presence_penalty
     self.messages = []
+
+  def log_json(self):
+      """Dump the messages to a JSON file."""
+      if self.json_log_file:
+        with open(self.json_log_file, 'w') as file:
+            json.dump(self.messages, file, indent=4)
 
   def output(self, message, silent=False):
     if not silent:
@@ -91,37 +100,54 @@ class ChatGptCli:
   def add_messages_from_args(self, args):
     silent = not self.interactive or not self.intro
 
-    if not any(arg in ('-s', '--system') for arg in args):
-      self.add_chat_message("system", DEFAULT_SYSTEM_PROMPT, silent=silent)
-
     args_iter = iter(args)
+    args_messages = []
 
     for arg in args_iter:
-      if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file'):
+      if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file', '-c', '--conversation'):
         continue
 
       content = next(args_iter, None)
 
       if arg in ('-s', '--system'):
-        self.add_chat_message("system", content, silent=silent)
+        args_messages.append({"role": "system", "content": content})
       elif arg in ('-a', '--assistant'):
-        self.add_chat_message("assistant", content, silent=silent)
+        args_messages.append({"role": "assistant", "content": content})
       elif arg in ('-u', '--user'):
-        self.add_chat_message("user", content, silent=silent)
+        args_messages.append({"role": "user", "content": content})
       elif arg in ('-f', '--file'):
-        self.add_chat_message("file", content, silent=silent)
+        args_messages.append({"role": "file", "content": content})
+      elif arg in ('-c', '--conversation'):
+        # so you can combine -c and -j on a file that doesn't exist yet
+        if not os.path.exists(content) and self.json_log_file == content:
+          continue
+
+        with open(content, 'r') as file:
+          conversation = json.load(file)
+          for message in conversation:
+            args_messages.append({"role": message.get('role'), "content": message.get('content')})
+
+    if not any(message.get("role") == "system" for message in args_messages):
+      args_messages.insert(0, {"role": "system", "content": DEFAULT_SYSTEM_PROMPT})
+
+    for message in args_messages:
+      self.add_chat_message(message.get('role'), message.get('content'), silent=silent)
 
   def main(self, args):
     self.add_messages_from_args(args)
 
     if not self.interactive:
       response = self.get_completion()
+      self.add_chat_message("assistant", response, silent=True)
+      self.log_json()
       self.output(response)
       return
     
     if self.immediate:
       response = self.get_completion()
       self.add_chat_message("assistant", response)
+
+    self.log_json()
 
     bindings = KeyBindings()
     bindings.add('c-c')(lambda _: sys.exit(0))
@@ -134,21 +160,62 @@ class ChatGptCli:
         key_bindings=bindings
       )
       self.add_chat_message("user", user_input, silent=True)
+      self.log_json()
 
       self.output(self.get_separator())
 
       response = self.get_completion()
       self.add_chat_message("assistant", response)
+      self.log_json()
 
+def print_help():
+  print(f"""
+ChatGPT CLI
+-----------
+
+This command line interface allows you to interact with the ChatGPT model in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
+
+Usage:
+  python chatgpt.py [options]
+
+Options:
+  MESSAGE ARGUMENTS:
+  -s, --system <message>       Add a system prompt message. If not specified, a default system prompt is used.
+  -a, --assistant <message>    Add an assistant response message.
+  -u, --user <message>         Add a user prompt message.
+  -f, --file <filename>        Add a user prompt message from a file.
+  -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
+  
+  MODEL ARGUMENTS:
+  -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
+  --temperature <value>        The sampling temperature to use, between 0 and 1.
+  --max-tokens <number>        The maximum number of tokens to generate in the completion.
+  --top-p <value>              The top-p sampling value to use, between 0 and 1.
+  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0.
+  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0.
+        
+  OTHER ARGUMENTS:
+  -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
+  -l, --log-file <filename>    Log output to a specified file.
+  -j, --log-file-json <file>   Output a JSON-formatted log to a specified file.
+  -i, --immediate              Get an assistant response immediately, before entering interactive mode.
+  -x, --separator <separator>  Specify the separator to use between messages.
+  -o, --no-intro               Don't print the system prompt, or messages specified on the command line.
+  -h, --help                   Print this help message and exit.
+        
+Message arguments are added to the conversation in the order in which they are specified on the command line. If no system prompt is specified, a default prompt will be added.
+        
+Interactive mode uses a multi-line editor, press Alt+Enter to submit, and Ctrl+C or Ctrl+D to exit.
+        
+Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key.
+        
+TIP: Try `{os.path.basename(sys.argv[0])} -c mylog.json -j mylog.json` to persist conversations between sessions.
+        """)
 
 def main():
-  if (os.environ.get("OPENAI_API_KEY") is None):
-    print("Please set the OPENAI_API_KEY environment variable to your OpenAI API key.")
-    sys.exit(1)
-
   parser = argparse.ArgumentParser(
     description='ChatGPT CLI',
-    epilog= "Message arguments are added to the conversation in the order in which they are specified on the command line. Interactive mode uses a multi-line editor, press alt+enter to submit. Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key."
+    add_help=False,
   )
 
   # Message arguments
@@ -157,6 +224,7 @@ def main():
   parser.add_argument('-a', '--assistant', action='append', help='Add an assistant response message.')
   parser.add_argument('-u', '--user', action='append', help='Add a user prompt message.')
   parser.add_argument('-f', '--file', action='append', help='Add a user prompt message from a file.')
+  parser.add_argument('-c', '--conversation', action='append', help='Load a previous conversation from a file. (see -j / --log-file-json)')
 
   # Model arguments
   parser.add_argument('--temperature', type=float, help='The sampling temperature to use, between 0 and 1.')
@@ -168,15 +236,26 @@ def main():
   # Other arguments
   parser.add_argument('-n', '--non-interactive', action='store_true', help='Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.')
   parser.add_argument('-l', '--log-file', help='Log output to a specified file.')
+  parser.add_argument('-j', '--log-file-json', help='Output a JSON-formatted log to a specified file.')
   parser.add_argument('-m', '--model', default='gpt-4o', help='Specify the model to use. (default: gpt-4o)')
   parser.add_argument('-i', '--immediate', action='store_true', help='Get an assistant response immediately, before entering interactive mode.')
   parser.add_argument('-x', '--separator', help='Specify the separator to use between messages.')
   parser.add_argument('-o', '--no-intro', action='store_true', help="Don't print the system prompt, or messages specified on the command line.")
+  parser.add_argument('-h', '--help', action='store_true')
 
   args = parser.parse_args()
 
+  if args.help:
+    print_help()
+    return
+
+  if (os.environ.get("OPENAI_API_KEY") is None):
+    print("Please set the OPENAI_API_KEY environment variable to your OpenAI API key. Use -h for help.")
+    sys.exit(1)
+
   cli = ChatGptCli(
     log_file=args.log_file,
+    log_file_json=args.log_file_json,
     interactive=not args.non_interactive,
     model=args.model,
     immediate=args.immediate,
