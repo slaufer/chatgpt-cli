@@ -171,13 +171,14 @@ class ChatGptCli:
       self.log_json()
 
 def print_help():
+  exec_path = os.path.basename(sys.argv[0])
   print(f"""
 ChatGPT CLI
 
 This command line interface allows you to interact with the ChatGPT model in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
 
 Usage:
-  python chatgpt.py [options]
+  {exec_path} [options]
 
 Options:
   MESSAGE ARGUMENTS:
@@ -211,7 +212,7 @@ By default, the program begins in interactive mode. Interactive mode uses a mult
 
 Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key.
 
-TIP: Try `{os.path.basename(sys.argv[0])} -c mylog.json -j mylog.json` to persist conversations between sessions.
+TIP: Try `{exec_path} -c mylog.json -j mylog.json` to persist conversations between sessions.
         """.strip())
 
 def main():
