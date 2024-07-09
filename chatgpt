@@ -2,6 +2,7 @@
 import os
 import sys
 import json
+import base64
 import argparse
 
 from shutil import get_terminal_size
@@ -69,8 +70,24 @@ class ChatGptCli:
         file.write(message)
 
   def get_completion(self):
+    messages = []
+
+    for message in self.messages:
+      if message.get('role') == 'file':
+        messages.append({
+          "role": "user",
+          "content": message.get('file_content')
+        })
+      elif message.get('role') == 'image':
+        messages.append({
+          "role": "user",
+          "content": [{"type": "image_url", "content": message.get('image_content')}]
+        })
+      else:
+        messages.append(message)
+
     response = self.client.chat.completions.create(
-      messages=self.messages,
+      messages=messages,
       model=self.model,
       temperature=self.temperature,
       max_tokens=self.max_tokens,
@@ -91,8 +108,24 @@ class ChatGptCli:
       file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
       with open(file_path, 'r') as file:
         file_content = file.read()
-      self.messages.append({"role": "user", "content": f'### FILE: `{file_path}`\n```\n{file_content}\n```'})
-      self.output(f'User:\n\nFILE: {file_path} (contents hidden)', silent=silent)
+      message = {
+        "role": "file",
+        "content": f'FILE: {file_path} (contents hidden)',
+        "file_content": f'### FILE: `{file_path}`\n```\n{file_content}\n```'
+      }
+      self.messages.append(message)
+      self.output(message.get('content'), silent=silent)
+    elif role == 'image':
+      file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
+      with open(file_path, 'rb') as file:
+        image_base64 = base64.b64encode(file.read()).decode('utf-8')
+      message = {
+        "role": "image",
+        "content": f'IMAGE: {file_path} (contents hidden)',
+        "image_content": f'data:image/jpeg;base64,{image_base64}'
+      }
+      self.messages.append(message)
+      self.output(message.get('content'), silent=silent)
     else:
       self.messages.append({"role": role, "content": content})
       self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
@@ -106,7 +139,7 @@ class ChatGptCli:
     args_messages = []
 
     for arg in args_iter:
-      if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file', '-c', '--conversation'):
+      if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file', '-i', '--image', '-c', '--conversation'):
         continue
 
       content = next(args_iter, None)
@@ -119,6 +152,8 @@ class ChatGptCli:
         args_messages.append({"role": "user", "content": content})
       elif arg in ('-f', '--file'):
         args_messages.append({"role": "file", "content": content})
+      elif arg in ('-i', '--image'):
+        args_messages.append({"role": "image", "content": content})
       elif arg in ('-c', '--conversation'):
         # so you can combine -c and -j on a file that doesn't exist yet
         if not os.path.exists(content) and self.json_log_file == content:
@@ -186,6 +221,7 @@ Options:
   -a, --assistant <message>    Add an assistant response message.
   -u, --user <message>         Add a user prompt message.
   -f, --file <filename>        Add a user prompt message from a file.
+  -i, --image <filename>       Add an image message from a file.
   -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
@@ -201,7 +237,7 @@ Options:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
   -l, --log-file <filename>    Log output to a specified file.
   -j, --log-file-json <file>   Output a JSON-formatted log to a specified file.
-  -i, --immediate              Get an assistant response immediately, before entering interactive mode.
+  -g, --immediate              Get an assistant response immediately, before entering interactive mode.
   -x, --separator <separator>  Specify the separator to use between messages.
   -o, --no-intro               Don't print the system prompt, or messages specified on the command line.
   -h, --help                   Print this help message and exit.
@@ -227,6 +263,7 @@ def main():
   parser.add_argument('-a', '--assistant', action='append', help='Add an assistant response message.')
   parser.add_argument('-u', '--user', action='append', help='Add a user prompt message.')
   parser.add_argument('-f', '--file', action='append', help='Add a user prompt message from a file.')
+  parser.add_argument('-i', '--image', action='append', help='Add a user prompt message from a file.')
   parser.add_argument('-c', '--conversation', action='append', help='Load a previous conversation from a file. (see -j / --log-file-json)')
   parser.add_argument('-d', '--no-system-prompt', action='store_true', help='Don\'t add a default system prompt if none is present.')
 
@@ -242,7 +279,7 @@ def main():
   parser.add_argument('-l', '--log-file', help='Log output to a specified file.')
   parser.add_argument('-j', '--log-file-json', help='Output a JSON-formatted log to a specified file.')
   parser.add_argument('-m', '--model', default='gpt-4o', help='Specify the model to use. (default: gpt-4o)')
-  parser.add_argument('-i', '--immediate', action='store_true', help='Get an assistant response immediately, before entering interactive mode.')
+  parser.add_argument('-g', '--immediate', action='store_true', help='Get an assistant response immediately, before entering interactive mode.')
   parser.add_argument('-x', '--separator', help='Specify the separator to use between messages.')
   parser.add_argument('-o', '--no-intro', action='store_true', help="Don't print the system prompt, or messages specified on the command line.")
   parser.add_argument('-h', '--help', action='store_true')
