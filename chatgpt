@@ -11,7 +11,13 @@ from openai import OpenAI
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-DEFAULT_SYSTEM_PROMPT = "You are ChatGPT, a large language model trained by OpenAI. Carefully heed the user's instructions. Respond using Markdown."
+DEFAULT_SYSTEM_PROMPT = f"""
+You are ChatGPT, a large language model trained by OpenAI.
+Carefully heed the user's instructions.
+Respond using Markdown.
+You will respond briefly and concisely unless you are explicitly asked to do otherwise.
+You will not include any extraneous or tangential details unless you are explicitly asked to do otherwise.
+""".strip()
 
 def get_file(file_path):
   path = os.path.relpath(os.path.abspath(file_path), os.getcwd())
