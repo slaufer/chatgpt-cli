@@ -120,26 +120,41 @@ class ChatGptCli:
     
     return '\n\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n\n'
 
-  def add_chat_message(self, role, content, silent=False):
+  def add_chat_message(self, role, content, message=None, silent=False):
     if role == 'file':
-      file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-      with open(file_path, 'r') as file:
-        file_content = file.read()
+      if message and 'file_content' in message:
+        content = message.get('content')
+        file_content = message.get('file_content')
+      else:
+        file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
+        content = f'FILE: {file_path} (contents hidden)'
+        with open(file_path, 'r') as file:
+          file_content = '### FILE: `{file_path}`\n```\n' + file.read() + '\n```'
+
       message = {
         "role": "file",
-        "content": f'FILE: {file_path} (contents hidden)',
-        "file_content": f'### FILE: `{file_path}`\n```\n{file_content}\n```'
+        "content": content,
+        "file_content": file_content
       }
       self.messages.append(message)
       self.output(message.get('content'), silent=silent)
     elif role == 'image':
-      file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-      with open(file_path, 'rb') as file:
-        image_base64 = base64.b64encode(file.read()).decode('utf-8')
+      # max_tokens is required for images
+      if not self.max_tokens:
+        self.max_tokens = 300
+
+      if message and 'image_content' in message:
+        content = message.get('content')
+        image_content = message.get('image_content')
+      else:
+        file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
+        content = f'IMAGE: {file_path} (contents hidden)'
+        with open(file_path, 'rb') as file:
+          image_content = 'data:image/jpeg;base64,' + base64.b64encode(file.read()).decode('utf-8')
       message = {
         "role": "image",
-        "content": f'IMAGE: {file_path} (contents hidden)',
-        "image_content": f'data:image/jpeg;base64,{image_base64}'
+        "content": content,
+        "image_content": image_content
       }
       self.messages.append(message)
       self.output(message.get('content'), silent=silent)
@@ -179,13 +194,13 @@ class ChatGptCli:
         with open(content, 'r') as file:
           conversation = json.load(file)
           for message in conversation:
-            args_messages.append({"role": message.get('role'), "content": message.get('content')})
+            args_messages.append(message)
 
     if not self.no_system_prompt and not any(message.get("role") == "system" for message in args_messages):
       args_messages.insert(0, {"role": "system", "content": DEFAULT_SYSTEM_PROMPT})
 
     for message in args_messages:
-      self.add_chat_message(message.get('role'), message.get('content'), silent=silent)
+      self.add_chat_message(message.get('role'), message.get('content'), message=message, silent=silent)
 
   def main(self, args):
     self.add_messages_from_args(args)
@@ -302,10 +317,6 @@ def main():
   parser.add_argument('-h', '--help', action='store_true')
 
   args = parser.parse_args()
-
-  # you have to specify max-tokens if you're using vision
-  if args.image and not args.max_tokens:
-    args.max_tokens = 300
 
   if args.help:
     print_help()
