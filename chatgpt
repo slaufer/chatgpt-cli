@@ -221,6 +221,7 @@ class ChatGptCli:
     bindings = KeyBindings()
     bindings.add('c-c')(lambda _: sys.exit(0))
     bindings.add('c-d')(lambda _: sys.exit(0))
+    bindings.add('enter')(lambda event: event.app.current_buffer.insert_text('\n'))
 
     while True:
       user_input = prompt(
