@@ -14,9 +14,6 @@ from prompt_toolkit.key_binding import KeyBindings
 DEFAULT_SYSTEM_PROMPT = f"""
 You are Claude, a large language model trained by Anthropic.
 Carefully heed the user's instructions.
-Respond using Markdown.
-You will respond briefly and concisely unless you are explicitly asked to do otherwise.
-You will not include any extraneous or tangential details unless you are explicitly asked to do otherwise.
 """.strip()
 
 def get_file(file_path):
@@ -162,6 +159,7 @@ class ClaudeCli:
       self.output(message.get('content'), silent=silent)
     elif role == 'system':
       self.system = content
+      self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
     else:
       self.messages.append({"role": role, "content": content})
       self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
