@@ -1,12 +1,12 @@
-# chatgpt-cli
-I get asked about my ChatGPT CLI sometimes, so I'm posting it here. Enjoy! 
+# llm-cli
+I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
 
-You might need to run `pip3 install prompt_toolkit openai` to make this script work.
+You might need to run `pip3 install prompt_toolkit openai anthropic` to make this script work.
 
 ```
-ChatGPT CLI
+LLM CLI
 
-This command line interface allows you to interact with the ChatGPT model in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
+This command line interface allows you to interact with OpenAI and Anthropic's chat completion APIs in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
 
 Usage:
   {exec_path} [options]
@@ -26,8 +26,8 @@ Options:
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
   --top-p <value>              The top-p sampling value to use, between 0 and 1.
-  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0.
-  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0.
+  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0. (OpenAI models only)
+  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0. (OpenAI models only)
         
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
@@ -42,7 +42,7 @@ Message arguments are added to the conversation in the order in which they are s
 
 By default, the program begins in interactive mode. Interactive mode uses a multi-line editor, press Alt+Enter to submit, and Ctrl+C or Ctrl+D to exit.
 
-Make sure you set the OPENAI_API_KEY environment variable to your OpenAI API key.
+Make sure you set the appropriate API key environment variable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY.
 
 TIP: Try `{exec_path} -c mylog.json -j mylog.json` to persist conversations between sessions.
 ```
