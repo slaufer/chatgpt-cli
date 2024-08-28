@@ -4,6 +4,7 @@ import sys
 import json
 import base64
 import argparse
+import mimetypes
 import anthropic
 
 from shutil import get_terminal_size
@@ -30,6 +31,14 @@ def get_file(file_path):
     content = file.read()
 
   return path, content
+
+def get_mime_type(image_path):
+  mime_type, _ = mimetypes.guess_type(image_path)
+
+  if mime_type is None:
+    return 'image/jpeg'
+  
+  return mime_type
 
 ##################
 # MODEL ADAPTERS #
@@ -101,12 +110,12 @@ class OpenAiModelAdapter(BaseModelAdapter):
           "content": [
             {
               "type": "text",
-              "text": message.get('content')
+              "text": 'IMAGE: ' + message.get('content')
             },
             {
               "type": "image_url",
               "image_url": {
-                "url": 'data:image/jpeg;base64,' + message.get('image_content')
+                "url": 'data:' + get_mime_type(message.get('content')) + ';base64,' + message.get('image_content')
               }
             }
           ]
@@ -169,31 +178,52 @@ class AnthropicModelAdapter(BaseModelAdapter):
     for message in input_messages:
       if message.get('role') == 'system':
         self.system = message.get('content')
-      elif message.get('role') == 'file':
-        messages.append({
-          "role": "user",
-          "content": message.get('file_content')
-        })
-      elif message.get('role') == 'image':
-        messages.append({
+        continue
+
+      if message.get('role') == 'file':
+        out_message = {
           "role": "user",
           "content": [
             {
               "type": "text",
-              "text": message.get('content')
+              "text": message.get('file_content')
+            }
+          ]
+        }
+      elif message.get('role') == 'image':
+        out_message = {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": 'IMAGE: ' + message.get('content')
             },
             {
               "type": "image",
               "source": {
                 "type": "base64",
-                "media_type": "image/png",
+                "media_type": get_mime_type(message.get('content')),
                 "data": message.get('image_content')
               }
             }
           ]
-        })
+        }
       else:
-        messages.append(message)
+        out_message = {
+          "role": message.get('role'),
+          "content": [
+            {
+              "type": "text",
+              "text": message.get('content')
+            }
+          ]
+        }
+
+      # Merge consecutive messages of the same role (required by Anthropic API)
+      if len(messages) > 0 and messages[-1].get('role') == out_message.get('role'):
+        messages[-1]['content'] += out_message.get('content')
+      else:
+        messages.append(out_message)
 
     req = {}
 
@@ -216,6 +246,7 @@ class AnthropicModelAdapter(BaseModelAdapter):
 
     response = self.client.messages.create(**req)
     return response.content[0].text
+
 
 def get_model_adapter(name, params):
   if name in OPENAI_MODELS:
@@ -294,7 +325,7 @@ class LlmCli:
         file_content = message.get('file_content')
       else:
         file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-        content = f'FILE: {file_path} (contents hidden)'
+        content = file_path
         with open(file_path, 'r') as file:
           file_content = '### FILE: `{file_path}`\n```\n' + file.read() + '\n```'
 
@@ -304,14 +335,14 @@ class LlmCli:
         "file_content": file_content
       }
       self.messages.append(message)
-      self.output(message.get('content'), silent=silent)
+      self.output('FILE: ' + message.get('content') + ' (contents hidden)', silent=silent)
     elif role == 'image':
       if message and 'image_content' in message:
         content = message.get('content')
         image_content = message.get('image_content')
       else:
         file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-        content = f'IMAGE: {file_path}'
+        content = file_path
         with open(file_path, 'rb') as file:
           image_content = base64.b64encode(file.read()).decode('utf-8')
       message = {
@@ -320,7 +351,7 @@ class LlmCli:
         "image_content": image_content
       }
       self.messages.append(message)
-      self.output(message.get('content'), silent=silent)
+      self.output('IMAGE: ' + message.get('content') + ' (contents hidden)', silent=silent)
     else:
       self.messages.append({"role": role, "content": content})
       self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
@@ -430,8 +461,8 @@ Options:
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
   --top-p <value>              The top-p sampling value to use, between 0 and 1.
-  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0.
-  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0.
+  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0. (OpenAI models only)
+  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0. (OpenAI models only)
         
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
