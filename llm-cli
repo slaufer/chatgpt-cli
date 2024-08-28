@@ -452,7 +452,7 @@ Options:
   -a, --assistant <message>    Add an assistant response message.
   -u, --user <message>         Add a user prompt message.
   -f, --file <filename>        Add a user prompt message from a file.
-  -i, --image <filename>       Add an image message from a file. If --max-tokens is not specified, a default value of 300 will be applied.
+  -i, --image <filename>       Add a user prompt message from an image. If --max-tokens is not specified, a default value may be applied.
   -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
@@ -482,6 +482,16 @@ Make sure you set the appropriate API key environment variable. For OpenAI model
 
 TIP: Try `{exec_path} -c mylog.json -j mylog.json` to persist conversations between sessions.
         """.strip())
+
+def print_model_list():
+  print("OpenAI models:")
+  for model in OPENAI_MODELS:
+    print(f"  - {model}")
+    
+  print("\nAnthropic models:")
+  for model in ANTHROPIC_MODELS:
+    print(f"  - {model}")
+  return
 
 ###################
 # ARGUMENT PARSER #
@@ -536,12 +546,7 @@ def main():
     return
   
   if args.list_models:
-    print("OpenAI models:")
-    for model in OPENAI_MODELS:
-      print(f"  - {model}")
-    print("\nAnthropic models:")
-    for model in ANTHROPIC_MODELS:
-      print(f"  - {model}")
+    print_model_list()
     return
 
   if (os.environ.get("OPENAI_API_KEY") is None):

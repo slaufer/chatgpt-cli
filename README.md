@@ -17,11 +17,12 @@ Options:
   -a, --assistant <message>    Add an assistant response message.
   -u, --user <message>         Add a user prompt message.
   -f, --file <filename>        Add a user prompt message from a file.
-  -i, --image <filename>       Add an image message from a file. If --max-tokens is not specified, a default value of 300 will be applied.
+  -i, --image <filename>       Add a user prompt message from an image. If --max-tokens is not specified, a default value may be applied.
   -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
   MODEL ARGUMENTS:
+  --list-models                List available models.
   -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
