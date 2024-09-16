@@ -249,7 +249,9 @@ class AnthropicModelAdapter(BaseModelAdapter):
 
 
 def get_model_adapter(name, params):
-  if name in OPENAI_MODELS:
+  api = params.get('api')
+
+  if api == 'openai' or (api is None and name in OPENAI_MODELS):
     return OpenAiModelAdapter(
       model = name,
       api_key = os.environ.get('OPENAI_API_KEY'),
@@ -260,7 +262,7 @@ def get_model_adapter(name, params):
       presence_penalty = params.get('presence_penalty')
     )
   
-  if name in ANTHROPIC_MODELS:
+  if api == 'anthropic' or (api is None and name in ANTHROPIC_MODELS):
     return AnthropicModelAdapter(
       model = name,
       api_key = os.environ.get('ANTHROPIC_API_KEY'),
@@ -268,6 +270,8 @@ def get_model_adapter(name, params):
       temperature = params.get('temperature'),
       top_p = params.get('top_p')
     )
+
+  raise Exception('No valid model was selected.')
 
 ##############
 # CLI DRIVER #
@@ -457,8 +461,9 @@ Options:
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
   MODEL ARGUMENTS:
-  --list-models                List available models.
+  --list-models                List available models for automatic API selection.
   -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
+  --api                        Specify the API to use. Required for unrecognized models. (options: openai, anthropic)
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
   --top-p <value>              The top-p sampling value to use, between 0 and 1.
@@ -513,8 +518,9 @@ def get_args():
   parser.add_argument('-c', '--conversation', action='append')
   parser.add_argument('-d', '--no-system-prompt', action='store_true')
 
-  # Model arguments
+  # Model argumhttps://github.com/acv-auctions/acv-web-vuejsents
   parser.add_argument('--list-models', action='store_true')
+  parser.add_argument('--api', choices=['openai', 'anthropic'])
   parser.add_argument('--temperature', type=float)
   parser.add_argument('--max-tokens', type=int)
   parser.add_argument('--top-p', type=float)
@@ -558,7 +564,8 @@ def main():
     "max_tokens": args.max_tokens,
     "top_p": args.top_p,
     "frequency_penalty": args.frequency_penalty,
-    "presence_penalty": args.presence_penalty
+    "presence_penalty": args.presence_penalty,
+    "api": args.api,
   })
 
   cli = LlmCli(
