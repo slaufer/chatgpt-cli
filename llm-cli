@@ -13,12 +13,12 @@ from openai import OpenAI
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-DEFAULT_SYSTEM_PROMPT = f"""
+DEFAULT_SYSTEM_PROMPT = f'''
 Carefully heed the user's instructions.
 Respond using Markdown.
 Respond briefly and concisely unless you are instructed to do otherwise.
 Do not include any extraneous or tangential details unless you are instructed to do otherwise.
-""".strip()
+'''.strip()
 
 INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+D to get completion without message; Ctrl+C to exit.'
 
@@ -403,7 +403,8 @@ class LlmCli:
       self.add_chat_message(message.get('role'), message.get('content'), message=message, silent=silent)
 
   def main(self, args):
-    self.output(f'Entering interactive mode with multi-line editor.\n\n{INTERACTIVE_KEYS}\n\n')
+    if self.interactive:
+        self.output(f'{INTERACTIVE_KEYS}' + self.get_separator())
 
     self.add_messages_from_args(args)
 
