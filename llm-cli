@@ -20,7 +20,7 @@ Respond briefly and concisely unless you are instructed to do otherwise.
 Do not include any extraneous or tangential details unless you are instructed to do otherwise.
 '''.strip()
 
-INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+D to get completion without message; Ctrl+C to exit.'
+INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.'
 
 #####################
 # UTILITY FUNCTIONS #
@@ -423,9 +423,10 @@ class LlmCli:
 
     bindings = KeyBindings()
     bindings.add('c-c')(lambda _: sys.exit(0))
+    bindings.add('c-d')(lambda _: sys.exit(0))
     bindings.add('enter')(lambda event: event.app.current_buffer.insert_text('\n'))
     bindings.add('escape', 'enter')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'text')))
-    bindings.add('c-d')(lambda event: event.app.exit(result=(None, 'skip')))
+    bindings.add('c-s')(lambda event: event.app.exit(result=(None, 'skip')))
     bindings.add('c-i')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'image')))
     bindings.add('c-f')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'file')))
 

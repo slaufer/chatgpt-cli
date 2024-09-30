@@ -9,7 +9,7 @@ LLM CLI
 This command line interface allows you to interact with OpenAI and Anthropic's chat completion APIs in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
 
 Usage:
-  {exec_path} [options]
+  llm-cli [options]
 
 Options:
   MESSAGE ARGUMENTS:
@@ -22,8 +22,9 @@ Options:
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
   
   MODEL ARGUMENTS:
-  --list-models                List available models.
+  --list-models                List available models for automatic API selection.
   -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
+  --api                        Specify the API to use. Required for unrecognized models. (options: openai, anthropic)
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
   --top-p <value>              The top-p sampling value to use, between 0 and 1.
@@ -41,9 +42,10 @@ Options:
 
 Message arguments are added to the conversation in the order in which they are specified on the command line. If no system prompt is specified, a default prompt will be added.
 
-By default, the program begins in interactive mode. Interactive mode uses a multi-line editor, press Alt+Enter to submit, and Ctrl+C or Ctrl+D to exit.
+By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
 
 Make sure you set the appropriate API key environment variable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY.
 
-TIP: Try `{exec_path} -c mylog.json -j mylog.json` to persist conversations between sessions.
+TIP: Try `llm-cli -c mylog.json -j mylog.json` to persist conversations between sessions.
+
 ```
