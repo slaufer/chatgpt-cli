@@ -460,7 +460,7 @@ class LlmCli:
           response = self.get_completion()
           self.add_chat_message("assistant", response)
         except Exception as e:
-          self.output(f'Unable to get completion: {str(e)}')
+          self.output(f'Unable to get completion: {str(e)}\n\n')
           continue
 
         self.log_json()
