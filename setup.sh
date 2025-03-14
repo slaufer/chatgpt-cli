@@ -6,7 +6,7 @@ if [ ! -d "venv" ]; then
 fi
 
 echo "Activating virtual environment..."
-source venv/bin/activate
+. venv/bin/activate
 
 echo "Installing dependencies..."
 pip install --upgrade pip
