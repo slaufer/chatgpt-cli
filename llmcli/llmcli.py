@@ -8,11 +8,15 @@ from shutil import get_terminal_size
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_model_adapter, get_file, get_mime_type, get_args
+from llmcli.util import get_model_adapter, get_file, get_mime_type, get_args, print_help, INTERACTIVE_KEYS
 
-DEFAULT_SYSTEM_PROMPT = "Carefully heed all instructions."
+DEFAULT_SYSTEM_PROMPT = f'''
+Carefully heed the user's instructions.
+Respond using Markdown.
+Respond briefly and concisely unless you are instructed to do otherwise.
+Do not include any extraneous or tangential details unless you are instructed to do otherwise.
+'''.strip()
 
-INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.'
 
 class LlmCli:
   def __init__(

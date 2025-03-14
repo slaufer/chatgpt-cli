@@ -1,4 +1,5 @@
 import os
+import sys
 import mimetypes
 import argparse
 
@@ -6,6 +7,8 @@ from llmcli.adapters.base import BaseModelAdapter
 from llmcli.adapters.openai import OpenAiModelAdapter
 from llmcli.adapters.anthropic import AnthropicModelAdapter
 from llmcli.adapters.ollama import OllamaModelAdapter
+
+INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.'
 
 def get_model_adapter(name, params):
   """
