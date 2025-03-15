@@ -1,5 +1,6 @@
 from openai import OpenAI
 from llmcli.adapters.base import BaseModelAdapter
+from llmcli.util import get_mime_type
 
 class OpenAiModelAdapter(BaseModelAdapter):
   def __init__(

@@ -8,7 +8,8 @@ from shutil import get_terminal_size
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_model_adapter, get_file, get_mime_type, get_args, print_help, INTERACTIVE_KEYS
+from llmcli.util import get_args, print_help, INTERACTIVE_KEYS
+from llmcli.util.get_model_adapter import get_model_adapter
 
 DEFAULT_SYSTEM_PROMPT = f'''
 Carefully heed the user's instructions.

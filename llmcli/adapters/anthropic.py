@@ -1,6 +1,7 @@
 import anthropic
 
 from llmcli.adapters.base import BaseModelAdapter
+from llmcli.util import get_mime_type
 
 class AnthropicModelAdapter(BaseModelAdapter):
   def __init__(

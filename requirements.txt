@@ -1,4 +1,0 @@
-anthropic
-openai
-prompt_toolkit
-ollama

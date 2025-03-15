@@ -1,9 +1,14 @@
-# llm-cli
+# LLM CLI (Formerly chatgpt-cli)
+
 I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
 
 ## Installation:
 
 Run `pip install git+https://github.com/slaufer/chatgpt-cli`
+
+## Usage:
+
+If you installed using pip, just run `llmcli`. Here's the help message:
 
 ```
 LLM CLI
@@ -11,7 +16,7 @@ LLM CLI
 This command line interface allows you to interact with OpenAI and Anthropic's chat completion APIs in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
 
 Usage:
-  llm-cli [options]
+  llmcli [options]
 
 Options:
   MESSAGE ARGUMENTS:
@@ -48,6 +53,60 @@ By default, the program begins in interactive mode. Interactive mode uses a mult
 
 Make sure you set the appropriate API key environment variable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY.
 
-TIP: Try `llm-cli -c mylog.json -j mylog.json` to persist conversations between sessions.
+TIP: Try `llmcli -c mylog.json -j mylog.json` to persist conversations between sessions.
 
 ```
+
+Here's an example:
+
+
+```
+slaufer@localhost:~$ llmcli
+Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
+
+ #============================================================================#
+
+System:
+
+Carefully heed the user's instructions.
+Respond using Markdown.
+Respond briefly and concisely unless you are instructed to do otherwise.
+Do not include any extraneous or tangential details unless you are instructed to do otherwise.
+
+ #============================================================================#
+
+User:
+ 
+Hi!
+
+ #============================================================================#
+
+Assistant:
+
+Hello! How can I assist you today?
+
+ #============================================================================#
+
+User:
+ 
+/home/slaufer/test.png
+IMAGE: test.png (contents hidden)
+
+ #============================================================================#
+
+User:
+ 
+What is in this image?
+
+ #============================================================================#
+
+Assistant:
+
+The image shows a kitten sitting in a woven basket.
+```
+
+## TODO
+
+- Separate options for model adapters
+- Replace interactive mode hotkeys with a single menu
+- Image support for Ollama (how?)
