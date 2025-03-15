@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "llmcli"
+version = "0.0.1"
+description = "An interactive/non-interactive CLI for various LLM chatbot APIs"
+authors = [{ name = "Scott Laufer", email = "" }]
+license = { file = "LICENSE" }
+readme = "README.md"
+dependencies = ["anthropic", "openai", "prompt_toolkit", "ollama"]
+
+[project.scripts]
+llmcli = "llmcli.llmcli:main"
+
+[tool.setuptools]
+packages = ["llmcli"]

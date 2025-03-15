@@ -147,7 +147,7 @@ Options:
   
   MODEL ARGUMENTS:
   -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
-  -p, --api                        Specify the API to use. Required for unrecognized models. (options: openai, anthropic, ollama; default: openai)
+  -p, --api                    Specify the API to use. Required for unrecognized models. (options: openai, anthropic, ollama; default: openai)
   --temperature <value>        The sampling temperature to use, between 0 and 1.
   --max-tokens <number>        The maximum number of tokens to generate in the completion.
   --top-p <value>              The top-p sampling value to use, between 0 and 1.
@@ -167,7 +167,7 @@ Message arguments are added to the conversation in the order in which they are s
 
 By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. {INTERACTIVE_KEYS}
 
-Make sure you set the appropriate API key environment variable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY.
+Make sure you set the appropriate API key environment variable, where applicable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY. If you're using a remote Ollama instance, make sure to set OLLAMA_HOST.
 
 TIP: Try `{exec_path} -c mylog.json -j mylog.json` to persist conversations between sessions.
         """.strip())

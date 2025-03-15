@@ -1,7 +1,9 @@
 # llm-cli
 I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
 
-You might need to run `pip3 install prompt_toolkit openai anthropic` to make this script work.
+## Installation:
+
+Run `pip install pip install git+https://github.com/slaufer/chatgpt-cli`
 
 ```
 LLM CLI
