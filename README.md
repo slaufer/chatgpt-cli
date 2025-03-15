@@ -3,7 +3,7 @@ I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
 
 ## Installation:
 
-Run `pip install pip install git+https://github.com/slaufer/chatgpt-cli`
+Run `pip install git+https://github.com/slaufer/chatgpt-cli`
 
 ```
 LLM CLI
