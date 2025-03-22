@@ -1,25 +1,27 @@
+import os
+
 from openai import OpenAI
-from llmcli.adapters.base import BaseModelAdapter
+from llmcli.adapters.base import BaseModelAdapter, ModelAdapterOption
 from llmcli.util import get_mime_type
 
+
 class OpenAiModelAdapter(BaseModelAdapter):
-  def __init__(
-    self,
-    model,
-    api_key,
-    max_tokens=None,
-    temperature=None,
-    top_p=None,
-    frequency_penalty=None,
-    presence_penalty=None
-  ):
-    self.model = model
-    self.client = OpenAI(api_key=api_key)
-    self.max_tokens = max_tokens
-    self.temperature = temperature
-    self.top_p = top_p
-    self.frequency_penalty = frequency_penalty
-    self.presence_penalty = presence_penalty
+  NAME = 'openai'
+  HR_NAME='OpenAI'
+  OPTIONS = [
+    ModelAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='gpt-4o'),
+    ModelAdapterOption(name='api_key', hr_name='API Key', description='Your OpenAI API key', default=os.environ.get('OPENAI_API_KEY')),
+    ModelAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion.'),
+    ModelAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
+    ModelAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
+    ModelAdapterOption(name='frequency_penalty', hr_name='Frequency Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far.'),
+    ModelAdapterOption(name='presence_penalty', hr_name='Presence Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far.')
+  ]
+  EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
+
+  def __init__(self, param_str):
+    super().__init__(param_str)
+    self.client = OpenAI(api_key=self.config.get('api_key'))
 
   def get_completion(self, input_messages):
     messages = []
@@ -31,8 +33,8 @@ class OpenAiModelAdapter(BaseModelAdapter):
           "content": message.get('file_content')
         })
       elif message.get('role') == 'image':
-        if self.max_tokens is None:
-          self.max_tokens = 300
+        if self.config.get('max_tokens') is None:
+          self.config['max_tokens'] = 300
 
         messages.append({
           "role": "user",
@@ -54,23 +56,23 @@ class OpenAiModelAdapter(BaseModelAdapter):
 
     req = {
       "messages": messages,
-      "model": self.model,
+      "model": self.config.get('model'),
     }
 
-    if self.max_tokens is not None:
-      req["max_tokens"] = self.max_tokens
-    
-    if self.temperature is not None:
-      req["temperature"] = self.temperature
+    if self.config.get('max_tokens') is not None:
+      req["max_tokens"] = self.config.get('max_tokens')
 
-    if self.top_p is not None:
-      req["top_p"] = self.top_p
+    if self.config.get('temperature') is not None:
+      req["temperature"] = self.config.get('temperature')
 
-    if self.frequency_penalty is not None:
-      req["frequency_penalty"] = self.frequency_penalty
+    if self.config.get('top_p') is not None:
+      req["top_p"] = self.config.get('top_p')
 
-    if self.presence_penalty is not None:
-      req["presence_penalty"] = self.presence_penalty
+    if self.config.get('frequency_penalty') is not None:
+      req["frequency_penalty"] = self.config.get('frequency_penalty')
+
+    if self.config.get('presence_penalty') is not None:
+      req["presence_penalty"] = self.config.get('presence_penalty')
 
     response = self.client.chat.completions.create(**req)
     return response.choices[0].message.content

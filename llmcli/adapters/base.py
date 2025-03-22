@@ -1,6 +1,33 @@
 class BaseModelAdapter:
-  def __init__():
-    pass
+  OPTIONS = []
+  config = {}
+
+  def __init__(self, params_str):
+    params = dict([
+      [s.strip() for s in param_str.split('=')]
+      for param_str in params_str.split(';')
+      if '=' in param_str
+    ])
+    self.config = {}
+
+    for option in self.OPTIONS:
+      if option.name in params:
+        self.config[option.name] = params[option.name]
+      elif option.default is not None:
+        self.config[option.name] = option.default
 
   def get_completion(messages):
-    pass
+    raise NotImplementedError('get_completion() must be implemented in a subclass')
+
+class ModelAdapterOption:
+  def __init__(
+      self,
+      name = None,
+      hr_name = None,
+      description = None,
+      default = None
+  ):
+    self.name = name
+    self.hr_name = hr_name
+    self.description = description
+    self.default = default

@@ -1,12 +1,18 @@
 import ollama
 
-from llmcli.adapters.base import BaseModelAdapter
+from llmcli.adapters.base import BaseModelAdapter, ModelAdapterOption
 
-import asyncio
 
 class OllamaModelAdapter(BaseModelAdapter):
-  def __init__(self, model):
-    self.model = model
+  NAME = 'ollama'
+  HR_NAME = 'Ollama'
+  OPTIONS = [
+    ModelAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='llama3.1:8b'),
+  ]
+  EXTRA_HELP = "By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable."
+
+  def __init__(self, param_str):
+    super().__init__(param_str)
 
   def get_completion(self, input_messages):
     messages = []

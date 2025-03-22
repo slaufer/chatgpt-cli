@@ -1,23 +1,25 @@
 import anthropic
+import os
 
-from llmcli.adapters.base import BaseModelAdapter
+from llmcli.adapters.base import BaseModelAdapter, ModelAdapterOption
 from llmcli.util import get_mime_type
 
+
 class AnthropicModelAdapter(BaseModelAdapter):
-  def __init__(
-    self,
-    model,
-    api_key,
-    max_tokens=None,
-    temperature=None,
-    top_p=None
-  ):
-    self.system = ""
-    self.model = model
-    self.client = anthropic.Anthropic(api_key=api_key)
-    self.max_tokens = max_tokens
-    self.temperature = temperature
-    self.top_p = top_p
+  NAME = 'anthropic'
+  HR_NAME = 'Anthropic'
+  OPTIONS = [
+    ModelAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='claude-3-7-sonnet-latest'),
+    ModelAdapterOption(name='api_key', hr_name='API Key', description='Your Anthropic API key', default=os.environ.get('ANTHROPIC_API_KEY')),
+    ModelAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion.'),
+    ModelAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
+    ModelAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
+  ]
+  EXTRA_HELP = "By default, uses the Anthropic API key from the environment variable ANTHROPIC_API_KEY."
+
+  def __init__(self, param_str):
+    super().__init__(param_str)
+    self.client = anthropic.Anthropic(api_key=self.config.get('api_key'))
 
   def get_completion(self, input_messages):
     messages = []
@@ -74,21 +76,19 @@ class AnthropicModelAdapter(BaseModelAdapter):
 
     req = {}
 
-    if self.temperature is not None:
-      req['temperature'] = self.temperature
+    if self.config.get('max_tokens') is not None:
+      req["max_tokens"] = self.config.get('max_tokens')
 
-    if self.max_tokens is not None:
-      req['max_tokens'] = self.max_tokens
-    else:
-      req['max_tokens'] = 300
+    if self.config.get('temperature') is not None:
+      req["temperature"] = self.config.get('temperature')
 
-    if self.top_p is not None:
-      req['top_p'] = self.top_p
+    if self.config.get('top_p') is not None:
+      req["top_p"] = self.config.get('top_p')
 
     if self.system is not None:
       req['system'] = self.system
 
-    req['model'] = self.model
+    req['model'] = self.config.get('model')
     req['messages'] = messages
 
     response = self.client.messages.create(**req)

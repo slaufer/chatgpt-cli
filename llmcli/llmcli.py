@@ -8,8 +8,10 @@ from shutil import get_terminal_size
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_args, print_help, INTERACTIVE_KEYS
-from llmcli.util.get_model_adapter import get_model_adapter
+from llmcli.util import get_args
+from llmcli.help import print_help, INTERACTIVE_KEYS
+
+from llmcli.adapters import get_model_adapter
 
 DEFAULT_SYSTEM_PROMPT = f'''
 Carefully heed the user's instructions.
@@ -142,6 +144,21 @@ class LlmCli:
     for message in args_messages:
       self.add_chat_message(message.get('role'), message.get('content'), message=message, silent=silent)
 
+  def menu(self):
+    self.output('llmcli menu:\n')
+    self.output('[1] Add a file\n')
+    self.output('[2] Add an image\n')
+    self.output('[3] Get completion\n')
+    self.output('[4] Change API\n')
+    self.output('[5] Change API options\n')
+    self.output('[6] Change JSON log file\n')
+    self.output('[7] Import JSON log file\n')
+    self.output('[8] Exit menu\n')
+    self.output('\nEnter selection: ')
+    choice = prompt()
+
+    self.output("You chose: "  + choice + "\n")
+
   def main(self, args):
     if self.interactive:
         self.output(f'{INTERACTIVE_KEYS}' + self.get_separator())
@@ -166,16 +183,14 @@ class LlmCli:
     bindings.add('c-d')(lambda _: sys.exit(0))
     bindings.add('enter')(lambda event: event.app.current_buffer.insert_text('\n'))
     bindings.add('escape', 'enter')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'text')))
+    bindings.add('c-m')(lambda event: event.app.exit(result=(None, 'menu')))
     bindings.add('c-s')(lambda event: event.app.exit(result=(None, 'skip')))
     bindings.add('c-i')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'image')))
     bindings.add('c-f')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'file')))
 
     while True:
-      (user_input, user_input_type) = prompt(
-        'User:\n\n',
-        multiline=True,
-        key_bindings=bindings
-      )
+      self.output("User:\n\n")
+      (user_input, user_input_type) = prompt('', multiline=True, key_bindings=bindings)
 
       try:
         if user_input_type == 'skip':
@@ -186,6 +201,9 @@ class LlmCli:
           self.add_chat_message('file', user_input)
         elif user_input_type == 'image':
           self.add_chat_message('image', user_input)
+        elif user_input_type == 'menu':
+          self.menu()
+          continue
       except Exception as e:
         self.output(f'Unable to add message: {str(e)}\n\n')
         continue
@@ -220,15 +238,6 @@ def main():
     print("Please set the OPENAI_API_KEY environment variable to your OpenAI API key. Use -h for help.")
     sys.exit(1)
 
-  model_adapter = get_model_adapter(args.model, {
-    "temperature": args.temperature,
-    "max_tokens": args.max_tokens,
-    "top_p": args.top_p,
-    "frequency_penalty": args.frequency_penalty,
-    "presence_penalty": args.presence_penalty,
-    "api": args.api,
-  })
-
   cli = LlmCli(
     log_file=args.log_file,
     log_file_json=args.log_file_json,
@@ -237,10 +246,7 @@ def main():
     separator=args.separator,
     intro=not args.no_intro,
     no_system_prompt=args.no_system_prompt,
-    model_adapter=model_adapter
+    model_adapter=get_model_adapter(args.api, args.api_options)
   )
 
   cli.main(sys.argv[1:])
-
-if __name__ == "__main__":
-  main()
