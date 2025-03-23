@@ -120,6 +120,8 @@ Options:
 
 ### <a name="example-usage"></a> Example usage:
 
+#### Describing an image in interactive mode, using default settings:
+
 ```
 slaufer@localhost:~$ llmcli
 Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
@@ -172,7 +174,29 @@ what is this image?
 Assistant:
 
 This image shows a kitten sitting inside a woven basket.
+```
 
+#### Describing a file in non-interactive mode, using Claude 3.5 Haiku, with a medium temperature setting:
+```
+slaufer@localhost:~/repos/chatgpt-cli$ llmcli -p anthropic -o 'model=claude-3-5-haiku-latest;temperature=0.5' -f README.md -a 'Describe the contents of this file.' -n
+
+The file appears to be a README.md for the LLM CLI (formerly chatgpt-cli) command-line tool. It provides:
+
+1. Installation instructions
+2. Detailed usage documentation
+3. Help message explaining command-line options
+4. An example of interactive usage
+5. A TODO section
+
+Key features of the tool include:
+- Chat with LLMs via OpenAI, Anthropic, and Ollama APIs
+- Support for system prompts, user messages, and assistant responses
+- Interactive and non-interactive modes
+- Conversation logging
+- Image input support (for some APIs)
+- Configurable API options
+
+The README is well-structured, using Markdown with anchored sections and clear, comprehensive explanations of the tool's functionality.
 ```
 
 ## <a name="todo"></a> TODO
