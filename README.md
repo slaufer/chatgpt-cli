@@ -4,7 +4,8 @@ I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
 
 ## Installation:
 
-Run `pip install git+https://github.com/slaufer/chatgpt-cli`
+### Install with pipx
+Run `pipx install git+https://github.com/slaufer/chatgpt-cli`
 
 ## Usage:
 
@@ -27,34 +28,54 @@ Options:
   -i, --image <filename>       Add a user prompt message from an image. If --max-tokens is not specified, a default value may be applied.
   -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
-  
-  MODEL ARGUMENTS:
-  --list-models                List available models for automatic API selection.
-  -m, --model <model_name>     Specify the model to use. (default: gpt-4o)
-  --api                        Specify the API to use. Required for unrecognized models. (options: openai, anthropic)
-  --temperature <value>        The sampling temperature to use, between 0 and 1.
-  --max-tokens <number>        The maximum number of tokens to generate in the completion.
-  --top-p <value>              The top-p sampling value to use, between 0 and 1.
-  --frequency-penalty <value>  The frequency penalty to use, between -2.0 and 2.0. (OpenAI models only)
-  --presence-penalty <value>   The presence penalty to use, between -2.0 and 2.0. (OpenAI models only)
-        
+
+  Message arguments are added to the conversation in the order in which they are specified on the command line.
+
+  API ARGUMENTS:
+  -p, --api                    Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
+  -o, --api-options            API options, in the format <key1>=<value1>;<key2>=<value2>;... (See ADAPTERS below.)
+
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
   -l, --log-file <filename>    Log output to a specified file.
   -j, --log-file-json <file>   Output a JSON-formatted log to a specified file.
   -g, --immediate              Get an assistant response immediately, before entering interactive mode.
   -x, --separator <separator>  Specify the separator to use between messages.
-  -o, --no-intro               Don't print the system prompt, or messages specified on the command line.
+  -q, --no-intro               Don't print the system prompt, or messages specified on the command line.
   -h, --help                   Print this help message and exit.
 
-Message arguments are added to the conversation in the order in which they are specified on the command line. If no system prompt is specified, a default prompt will be added.
+  By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
 
-By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
+  TIP: Try `llmcli -c mylog.json -j mylog.json` to persist conversations between sessions.
 
-Make sure you set the appropriate API key environment variable. For OpenAI models, set OPENAI_API_KEY. For Anthropic models, set ANTHROPIC_API_KEY.
+  ADAPTERS:
+    OpenAI (openai)
+      OPTIONS:
+      - model                  Model ID used to generate the response. (default: gpt-4o)
+      - api_key                Your OpenAI API key (default: XXXX)
+      - max_tokens             The maximum number of tokens that can be generated in the chat completion.
+      - temperature            What sampling temperature to use, between 0 and 2.
+      - top_p                  An alternative to sampling with temperature, called nucleus sampling.
+      - frequency_penalty      Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far.
+      - presence_penalty       Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far.
 
-TIP: Try `llmcli -c mylog.json -j mylog.json` to persist conversations between sessions.
+      By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY.
 
+    Anthropic (anthropic)
+      OPTIONS:
+      - model                  Model ID used to generate the response. (default: claude-3-7-sonnet-latest)
+      - api_key                Your Anthropic API key (default: XXXX)
+      - max_tokens             The maximum number of tokens that can be generated in the chat completion (default: 1000)
+      - temperature            What sampling temperature to use, between 0 and 2.
+      - top_p                  An alternative to sampling with temperature, called nucleus sampling.
+
+      By default, uses the Anthropic API key from the environment variable ANTHROPIC_API_KEY.
+
+    Ollama (ollama)
+      OPTIONS:
+      - model                  Model ID used to generate the response. (default: llama3.1:8b)
+
+      By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable.
 ```
 
 Here's an example:
@@ -63,7 +84,6 @@ Here's an example:
 ```
 slaufer@localhost:~$ llmcli
 Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
-
  #============================================================================#
 
 System:
@@ -76,8 +96,8 @@ Do not include any extraneous or tangential details unless you are instructed to
  #============================================================================#
 
 User:
- 
-Hi!
+
+hey chatgpt!
 
  #============================================================================#
 
@@ -88,25 +108,33 @@ Hello! How can I assist you today?
  #============================================================================#
 
 User:
+
  
-/home/slaufer/test.png
-IMAGE: test.png (contents hidden)
+[0] Add a file
+[1] Add an image
+[2] Change API
+[3] Change API options
+[4] Change JSON log file
+[5] Exit menu
+[6] Quit
+ 
+Enter selection: 1
+Enter image path: ~/test.png
+IMAGE: ../../test.png (contents hidden)
 
  #============================================================================#
 
 User:
- 
-What is in this image?
+
+what is this image?
 
  #============================================================================#
 
 Assistant:
 
-The image shows a kitten sitting in a woven basket.
+This image shows a kitten sitting inside a woven basket.
+
 ```
 
 ## TODO
-
-- Separate options for model adapters
-- Replace interactive mode hotkeys with a single menu
-- Image support for Ollama (how?)
+- Image support for Ollama
