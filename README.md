@@ -17,7 +17,7 @@ The easiest way to install is using pipx:
 
 `pipx install git+https://github.com/slaufer/chatgpt-cli`
 
-### <a name="#setting-up-path"></a> Setting up PATH
+### <a name="setting-up-path"></a> Setting up PATH
 
 If the `llmcli` command is not found after install, you may need to add its location to your PATH variable.
 
@@ -32,11 +32,11 @@ In Windows, Use System Properties -> Environment Variables to edit your PATH, an
 ```
 
 
-## <a name="#usage"></a> Usage:
+## <a name="usage"></a> Usage:
 
 If you installed using pipx, just run `llmcli`.
 
-### <a name="#help-message"></a> Help message
+### <a name="help-message"></a> Help message
 
 ```
 LLM CLI
@@ -105,7 +105,7 @@ Options:
       By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable.
 ```
 
-### <a name="#example-usage"></a> Example usage:
+### <a name="example-usage"></a> Example usage:
 
 ```
 slaufer@localhost:~$ llmcli
@@ -162,5 +162,5 @@ This image shows a kitten sitting inside a woven basket.
 
 ```
 
-## <a name="#todo"></a> TODO
+## <a name="todo"></a> TODO
 - Image support for Ollama
