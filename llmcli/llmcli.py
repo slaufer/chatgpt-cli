@@ -215,15 +215,19 @@ class LlmCli:
     opts[choice][1]()
 
   def repl(self, bindings):
+    default_input = None
+
     while True:
       print("User:\n")
-      (user_input, user_input_type) = prompt('', multiline=True, key_bindings=bindings)
+      (user_input, user_input_type) = prompt(multiline=True, key_bindings=bindings, default=default_input or '')
+      default_input = None
 
       try:
         if user_input_type == 'text':
           self.add_chat_message('user', user_input, silent=True)
         elif user_input_type == 'menu':
           self.menu()
+          default_input = user_input
           continue
       except Exception as e:
         print(f'Unable to add message: {str(e)}\n')
@@ -267,7 +271,7 @@ class LlmCli:
     bindings.add('c-d')(lambda _: sys.exit(0))
     bindings.add('enter')(lambda event: event.app.current_buffer.insert_text('\n'))
     bindings.add('escape', 'enter')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'text')))
-    bindings.add('c-b')(lambda event: event.app.exit(result=(None, 'menu')))
+    bindings.add('c-b')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'menu')))
 
     self.repl(bindings)
 

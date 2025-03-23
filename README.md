@@ -164,3 +164,4 @@ This image shows a kitten sitting inside a woven basket.
 
 ## <a name="todo"></a> TODO
 - Image support for Ollama
+- Additional model parameters for Ollama
