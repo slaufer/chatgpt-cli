@@ -5,6 +5,7 @@ LLM CLI is a command-line tool to chat with LLMs via the OpenAI, Anthropic, and 
 - [Installation](#installation)
   - [Install with pipx (recommended)](#install-with-pipx)
   - [Setting up PATH](#setting-up-path)
+  - [API Keys](#api-keys)
 - [Usage](#usage)
   - [Help message](#help-message)
   - [Example usage](#example-usage)
@@ -31,6 +32,13 @@ In Windows, Use System Properties -> Environment Variables to edit your PATH, an
 %USERPROFILE%\AppData\Roaming\Python\Scripts
 ```
 
+### <a name="api-keys"></a> API Keys
+
+To use the Anthropic or OpenAI APIs, you'll need API keys set as environment variables:
+- OpenAI: Create a key at <a href="https://platform.openai.com/">platform.openai.com</a>. Set it as OPENAI_API_KEY.
+- Anthropic: Create a key at <a href="https://console.anthropic.com">console.anthropic.com</a>. Set it as ANTHROPIC_API_KEY.
+
+Make sure these variables are exported in your shell before running the CLI. Alternatively, you can use the `api_key` model option, e.g. `llm-cli -p openai -o api_key=your_api_key`.
 
 ## <a name="usage"></a> Usage:
 
