@@ -3,7 +3,7 @@ import sys
 
 from llmcli.adapters import get_adapter_list
 
-INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.'
+INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.'
 
 def print_help():
   exec_path = os.path.basename(sys.argv[0])
@@ -53,7 +53,9 @@ Options:
     print(f"      OPTIONS:")
 
     for option in adapter.OPTIONS:
-      if option.default is not None:
+      if option.default_help_override is not None:
+        print(f"      - {option.name : <22} {option.description} (default: {option.default_help_override})")
+      elif option.default is not None:
         print(f"      - {option.name : <22} {option.description} (default: {option.default})")
       else:
         print(f"      - {option.name : <22} {option.description}")

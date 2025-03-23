@@ -10,7 +10,7 @@ class AnthropicApiAdapter(BaseApiAdapter):
   HR_NAME = 'Anthropic'
   OPTIONS = [
     ApiAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='claude-3-7-sonnet-latest'),
-    ApiAdapterOption(name='api_key', hr_name='API Key', description='Your Anthropic API key', default=os.environ.get('ANTHROPIC_API_KEY')),
+    ApiAdapterOption(name='api_key', hr_name='API Key', description='Your Anthropic API key', default=os.environ.get('ANTHROPIC_API_KEY'), default_help_override='ANTHROPIC_API_KEY'),
     ApiAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion', default=1000),
     ApiAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
     ApiAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),

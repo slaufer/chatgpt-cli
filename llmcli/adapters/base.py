@@ -20,9 +20,11 @@ class ApiAdapterOption:
       name = None,
       hr_name = None,
       description = None,
-      default = None
+      default = None,
+      default_help_override = None,
   ):
     self.name = name
     self.hr_name = hr_name
     self.description = description
     self.default = default
+    self.default_help_override = default_help_override

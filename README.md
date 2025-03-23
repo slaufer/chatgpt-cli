@@ -79,7 +79,7 @@ Options:
     OpenAI (openai)
       OPTIONS:
       - model                  Model ID used to generate the response. (default: gpt-4o)
-      - api_key                Your OpenAI API key (default: XXXX)
+      - api_key                Your OpenAI API key (default: OPENAI_API_KEY)
       - max_tokens             The maximum number of tokens that can be generated in the chat completion.
       - temperature            What sampling temperature to use, between 0 and 2.
       - top_p                  An alternative to sampling with temperature, called nucleus sampling.
@@ -91,7 +91,7 @@ Options:
     Anthropic (anthropic)
       OPTIONS:
       - model                  Model ID used to generate the response. (default: claude-3-7-sonnet-latest)
-      - api_key                Your Anthropic API key (default: XXXX)
+      - api_key                Your Anthropic API key (default: ANTHROPIC_API_KEY)
       - max_tokens             The maximum number of tokens that can be generated in the chat completion (default: 1000)
       - temperature            What sampling temperature to use, between 0 and 2.
       - top_p                  An alternative to sampling with temperature, called nucleus sampling.
@@ -101,6 +101,19 @@ Options:
     Ollama (ollama)
       OPTIONS:
       - model                  Model ID used to generate the response. (default: llama3.1:8b)
+      - mirostat               Enable Mirostat sampling for controlling perplexity.
+      - mirostat_eta           Influences how quickly the algorithm responds to feedback from the generated text.
+      - mirostat_tau           Controls the balance between coherence and diversity of the output.
+      - num_ctx                Sets the size of the context window used to generate the next token.
+      - repeat_last_n          Sets how far back for the model to look back to prevent repetition.
+      - repeat_penalty         Sets how strongly to penalize repetitions.
+      - temperature            The temperature of the model; higher values increase creativity.
+      - seed                   Sets the random number seed to use for generation.
+      - stop                   Sets the stop sequences to use; generation stops when encountered.
+      - num_predict            Maximum number of tokens to predict when generating text.
+      - top_k                  Reduces the probability of generating nonsense by limiting token selection.
+      - top_p                  Controls diversity via nucleus sampling; higher values yield more diverse text.
+      - min_p                  Ensures a minimum probability threshold for token selection.
 
       By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable.
 ```
@@ -164,4 +177,3 @@ This image shows a kitten sitting inside a woven basket.
 
 ## <a name="todo"></a> TODO
 - Image support for Ollama
-- Additional model parameters for Ollama
