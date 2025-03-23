@@ -47,4 +47,10 @@ def get_args():
 
   return parser.parse_args()
 
+def parse_api_params_str(params_str):
+    return dict([
+      [s.strip() for s in param_str.split('=')]
+      for param_str in params_str.split(';')
+      if '=' in param_str
+    ])
 

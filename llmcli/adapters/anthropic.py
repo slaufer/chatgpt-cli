@@ -1,24 +1,24 @@
 import anthropic
 import os
 
-from llmcli.adapters.base import BaseModelAdapter, ModelAdapterOption
+from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
 from llmcli.util import get_mime_type
 
 
-class AnthropicModelAdapter(BaseModelAdapter):
+class AnthropicApiAdapter(BaseApiAdapter):
   NAME = 'anthropic'
   HR_NAME = 'Anthropic'
   OPTIONS = [
-    ModelAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='claude-3-7-sonnet-latest'),
-    ModelAdapterOption(name='api_key', hr_name='API Key', description='Your Anthropic API key', default=os.environ.get('ANTHROPIC_API_KEY')),
-    ModelAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion.'),
-    ModelAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
-    ModelAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
+    ApiAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='claude-3-7-sonnet-latest'),
+    ApiAdapterOption(name='api_key', hr_name='API Key', description='Your Anthropic API key', default=os.environ.get('ANTHROPIC_API_KEY')),
+    ApiAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion', default=1000),
+    ApiAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
+    ApiAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
   ]
   EXTRA_HELP = "By default, uses the Anthropic API key from the environment variable ANTHROPIC_API_KEY."
 
-  def __init__(self, param_str):
-    super().__init__(param_str)
+  def __init__(self, params):
+    super().__init__(params)
     self.client = anthropic.Anthropic(api_key=self.config.get('api_key'))
 
   def get_completion(self, input_messages):

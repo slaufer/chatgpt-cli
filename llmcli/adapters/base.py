@@ -1,13 +1,8 @@
-class BaseModelAdapter:
+class BaseApiAdapter:
   OPTIONS = []
   config = {}
 
-  def __init__(self, params_str):
-    params = dict([
-      [s.strip() for s in param_str.split('=')]
-      for param_str in params_str.split(';')
-      if '=' in param_str
-    ])
+  def __init__(self, params):
     self.config = {}
 
     for option in self.OPTIONS:
@@ -19,7 +14,7 @@ class BaseModelAdapter:
   def get_completion(messages):
     raise NotImplementedError('get_completion() must be implemented in a subclass')
 
-class ModelAdapterOption:
+class ApiAdapterOption:
   def __init__(
       self,
       name = None,

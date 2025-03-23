@@ -1,26 +1,26 @@
 import os
 
 from openai import OpenAI
-from llmcli.adapters.base import BaseModelAdapter, ModelAdapterOption
+from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
 from llmcli.util import get_mime_type
 
 
-class OpenAiModelAdapter(BaseModelAdapter):
+class OpenAiApiAdapter(BaseApiAdapter):
   NAME = 'openai'
   HR_NAME='OpenAI'
   OPTIONS = [
-    ModelAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='gpt-4o'),
-    ModelAdapterOption(name='api_key', hr_name='API Key', description='Your OpenAI API key', default=os.environ.get('OPENAI_API_KEY')),
-    ModelAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion.'),
-    ModelAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
-    ModelAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
-    ModelAdapterOption(name='frequency_penalty', hr_name='Frequency Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far.'),
-    ModelAdapterOption(name='presence_penalty', hr_name='Presence Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far.')
+    ApiAdapterOption(name='model', hr_name='Model', description='Model ID used to generate the response.', default='gpt-4o'),
+    ApiAdapterOption(name='api_key', hr_name='API Key', description='Your OpenAI API key', default=os.environ.get('OPENAI_API_KEY')),
+    ApiAdapterOption(name='max_tokens', hr_name='Max Tokens', description='The maximum number of tokens that can be generated in the chat completion.'),
+    ApiAdapterOption(name='temperature', hr_name='Temperature', description='What sampling temperature to use, between 0 and 2.'),
+    ApiAdapterOption(name='top_p', hr_name='Top P', description='An alternative to sampling with temperature, called nucleus sampling.'),
+    ApiAdapterOption(name='frequency_penalty', hr_name='Frequency Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far.'),
+    ApiAdapterOption(name='presence_penalty', hr_name='Presence Penalty', description='Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far.')
   ]
   EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
 
-  def __init__(self, param_str):
-    super().__init__(param_str)
+  def __init__(self, params):
+    super().__init__(params)
     self.client = OpenAI(api_key=self.config.get('api_key'))
 
   def get_completion(self, input_messages):

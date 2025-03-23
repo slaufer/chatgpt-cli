@@ -8,10 +8,10 @@ from shutil import get_terminal_size
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_args
+from llmcli.util import get_args, parse_api_params_str
 from llmcli.help import print_help, INTERACTIVE_KEYS
 
-from llmcli.adapters import get_model_adapter
+from llmcli.adapters import get_api_adapter
 
 DEFAULT_SYSTEM_PROMPT = f'''
 Carefully heed the user's instructions.
@@ -31,7 +31,8 @@ class LlmCli:
     separator = None,
     intro=True,
     no_system_prompt=False,
-    model_adapter=None
+    api_adapter_name=None,
+    api_adapter_options=None,
   ):
     self.log_file = log_file
     self.json_log_file = log_file_json
@@ -40,7 +41,11 @@ class LlmCli:
     self.separator = separator
     self.intro = intro
     self.no_system_prompt = no_system_prompt
-    self.model_adapter = model_adapter
+
+    self.api_adapter_name = api_adapter_name
+    self.api_adapter_options = api_adapter_options
+    self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params_str(self.api_adapter_options))
+
     self.messages = []
 
   def log_json(self):
@@ -58,7 +63,7 @@ class LlmCli:
         file.write(message)
 
   def get_completion(self):
-    return self.model_adapter.get_completion(self.messages)
+    return self.api_adapter.get_completion(self.messages)
 
   def get_separator(self):
     if self.separator is not None:
@@ -144,20 +149,86 @@ class LlmCli:
     for message in args_messages:
       self.add_chat_message(message.get('role'), message.get('content'), message=message, silent=silent)
 
-  def menu(self):
-    self.output('llmcli menu:\n')
-    self.output('[1] Add a file\n')
-    self.output('[2] Add an image\n')
-    self.output('[3] Get completion\n')
-    self.output('[4] Change API\n')
-    self.output('[5] Change API options\n')
-    self.output('[6] Change JSON log file\n')
-    self.output('[7] Import JSON log file\n')
-    self.output('[8] Exit menu\n')
-    self.output('\nEnter selection: ')
-    choice = prompt()
+  def add_file(self):
+    input = prompt('Enter file path: ')
+    self.add_chat_message('file', input)
+  
+  def add_image(self):
+    input = prompt('Enter image path: ')
+    self.add_chat_message('image', input)
 
-    self.output("You chose: "  + choice + "\n")
+  def change_api_adapter_name(self):
+    api_adapter_name = prompt('Enter API name: ')
+    api_adapter = get_api_adapter(api_adapter_name, parse_api_params_str(self.api_adapter_options))
+    self.api_adapter_name = api_adapter_name
+    self.api_adapter = api_adapter
+
+  def change_api_adapter_options(self):
+    api_adapter_options = prompt('Enter API options: ')
+    api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params_str(api_adapter_options))
+    self.api_adapter_options = api_adapter_options
+    self.api_adapter = api_adapter
+
+
+  def menu(self):
+    opts = [
+      ('Add a file', lambda: self.add_file()),
+      ('Add an image', lambda: self.add_image()),
+      ('Change API', lambda: self.change_api_adapter_name()),
+      ('Change API options', lambda: self.change_api_adapter_options()),
+      ('Change JSON log file', lambda: self.change_json_log_file()),
+      ('Import JSON log file', lambda: self.import_json_log_file()),
+      ('Exit menu', lambda: 0),
+      ('Quit', lambda: sys.exit(0)),
+    ]
+
+    for i, opt in enumerate(opts):
+      self.output(f'[{i}] {opt[0]}\n')
+
+    self.output('\nEnter selection: ')
+    input = prompt()
+    self.output('{input}\n', silent=True)
+
+    try:
+      choice = int(input)
+    except ValueError:
+      self.output(f'Invalid selection: {input}\n')
+      return
+    
+    if choice < 0 or choice >= len(opts):
+      self.output(f'Invalid selection: {choice}\n')
+      return
+
+    opts[choice][1]()
+
+  def repl(self, bindings):
+    while True:
+      self.output("User:\n\n")
+      (user_input, user_input_type) = prompt('', multiline=True, key_bindings=bindings)
+
+      try:
+        if user_input_type == 'text':
+          self.add_chat_message('user', user_input, silent=True)
+        elif user_input_type == 'menu':
+          self.menu()
+          continue
+      except Exception as e:
+        self.output(f'Unable to add message: {str(e)}\n\n')
+        continue
+
+      self.log_json()
+
+      if user_input_type == 'text':
+        self.output(self.get_separator())
+
+        try:
+          response = self.get_completion()
+          self.add_chat_message("assistant", response)
+        except Exception as e:
+          self.output(f'Unable to get completion: {str(e)}\n\n')
+          continue
+
+        self.log_json()
 
   def main(self, args):
     if self.interactive:
@@ -183,45 +254,9 @@ class LlmCli:
     bindings.add('c-d')(lambda _: sys.exit(0))
     bindings.add('enter')(lambda event: event.app.current_buffer.insert_text('\n'))
     bindings.add('escape', 'enter')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'text')))
-    bindings.add('c-m')(lambda event: event.app.exit(result=(None, 'menu')))
-    bindings.add('c-s')(lambda event: event.app.exit(result=(None, 'skip')))
-    bindings.add('c-i')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'image')))
-    bindings.add('c-f')(lambda event: event.app.exit(result=(event.app.current_buffer.text, 'file')))
+    bindings.add('c-b')(lambda event: event.app.exit(result=(None, 'menu')))
 
-    while True:
-      self.output("User:\n\n")
-      (user_input, user_input_type) = prompt('', multiline=True, key_bindings=bindings)
-
-      try:
-        if user_input_type == 'skip':
-          pass
-        elif user_input_type == 'text':
-          self.add_chat_message('user', user_input, silent=True)
-        elif user_input_type == 'file':
-          self.add_chat_message('file', user_input)
-        elif user_input_type == 'image':
-          self.add_chat_message('image', user_input)
-        elif user_input_type == 'menu':
-          self.menu()
-          continue
-      except Exception as e:
-        self.output(f'Unable to add message: {str(e)}\n\n')
-        continue
-
-      self.log_json()
-
-
-      if user_input_type in ['text', 'skip']:
-        self.output(self.get_separator())
-
-        try:
-          response = self.get_completion()
-          self.add_chat_message("assistant", response)
-        except Exception as e:
-          self.output(f'Unable to get completion: {str(e)}\n\n')
-          continue
-
-        self.log_json()
+    self.repl(bindings)
 
 ###############
 # INITIALIZER #
@@ -246,7 +281,8 @@ def main():
     separator=args.separator,
     intro=not args.no_intro,
     no_system_prompt=args.no_system_prompt,
-    model_adapter=get_model_adapter(args.api, args.api_options)
+    api_adapter_name=args.api,
+    api_adapter_options=args.api_options,
   )
 
   cli.main(sys.argv[1:])

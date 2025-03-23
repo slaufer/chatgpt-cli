@@ -1,15 +1,15 @@
-from llmcli.adapters.openai import OpenAiModelAdapter
-from llmcli.adapters.anthropic import AnthropicModelAdapter
-from llmcli.adapters.ollama import OllamaModelAdapter
+from llmcli.adapters.openai import OpenAiApiAdapter
+from llmcli.adapters.anthropic import AnthropicApiAdapter
+from llmcli.adapters.ollama import OllamaApiAdapter
 
 def get_adapter_list():
   return [
-    OpenAiModelAdapter,
-    AnthropicModelAdapter,
-    OllamaModelAdapter,
+    OpenAiApiAdapter,
+    AnthropicApiAdapter,
+    OllamaApiAdapter,
   ]
 
-def get_model_adapter(name, params):
+def get_api_adapter(name, params):
   for adapter in get_adapter_list():
     if adapter.NAME == name or adapter.HR_NAME == name:
       return adapter(params)
