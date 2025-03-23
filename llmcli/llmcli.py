@@ -73,10 +73,6 @@ class LlmCli:
       message=None,
       silent=False
   ):
-    """
-    If this comment is still here, you know I didn't read the diff before I merged this commit
-    shit piss fuck cunt cocksucker motherfucker tits
-    """
     if role == 'file':
       if message and 'file_content' in message:
         content = message.get('content')
@@ -169,13 +165,13 @@ class LlmCli:
     self.add_chat_message('image', os.path.expanduser(input))
 
   def change_api_adapter_name(self):
-    api_adapter_name = prompt('Enter API name: ')
+    api_adapter_name = prompt('Enter API name: ', default=self.api_adapter_name)
     api_adapter = get_api_adapter(api_adapter_name, parse_api_params_str(self.api_adapter_options))
     self.api_adapter_name = api_adapter_name
     self.api_adapter = api_adapter
 
   def change_api_adapter_options(self):
-    api_adapter_options = prompt('Enter API options: ')
+    api_adapter_options = prompt('Enter API options: ', default=self.api_adapter_options)
     api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params_str(api_adapter_options))
     self.api_adapter_options = api_adapter_options
     self.api_adapter = api_adapter

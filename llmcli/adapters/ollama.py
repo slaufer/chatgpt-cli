@@ -29,5 +29,5 @@ class OllamaApiAdapter(BaseApiAdapter):
       else:
         messages.append(message)
 
-    response = ollama.chat(model=self.model, messages=messages)
+    response = ollama.chat(model=self.config.get('model'), messages=messages)
     return response.message.content
