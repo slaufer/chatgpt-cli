@@ -1,15 +1,42 @@
 # LLM CLI (Formerly chatgpt-cli)
 
-I get asked about my LLM CLI sometimes, so I'm posting it here. Enjoy!
+LLM CLI is a command-line tool to chat with LLMs via the OpenAI, Anthropic, and Ollama APIs.
 
-## Installation:
+- [Installation](#installation)
+  - [Install with pipx (recommended)](#install-with-pipx)
+  - [Setting up PATH](#setting-up-path)
+- [Usage](#usage)
+  - [Help message](#help-message)
+  - [Example usage](#example-usage)
+- [TODO](#todo)
 
-### Install with pipx
-Run `pipx install git+https://github.com/slaufer/chatgpt-cli`
+## <a id="installation"></a> Installation:
 
-## Usage:
+### <a id="install-with-pipx"></a> Install with pipx (recommended)
+The easiest way to install is using pipx:
 
-If you installed using pip, just run `llmcli`. Here's the help message:
+`pipx install git+https://github.com/slaufer/chatgpt-cli`
+
+### <a id="#setting-up-path"></a> Setting up PATH
+
+If the `llmcli` command is not found after install, you may need to add its location to your PATH variable.
+
+In Linux and MacOS, add this to your ~/.bashrc or ~/.zshrc file, and restart your terminal:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+In Windows, Use System Properties -> Environment Variables to edit your PATH, and add:
+```
+%USERPROFILE%\AppData\Roaming\Python\Scripts
+```
+
+
+## <a id="#usage"></a> Usage:
+
+If you installed using pipx, just run `llmcli`.
+
+### <a id="#help-message"></a> Help message
 
 ```
 LLM CLI
@@ -44,7 +71,7 @@ Options:
   -q, --no-intro               Don't print the system prompt, or messages specified on the command line.
   -h, --help                   Print this help message and exit.
 
-  By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
+  By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
 
   TIP: Try `llmcli -c mylog.json -j mylog.json` to persist conversations between sessions.
 
@@ -78,12 +105,11 @@ Options:
       By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable.
 ```
 
-Here's an example:
-
+### <a id="#example-usage"></a> Example usage:
 
 ```
 slaufer@localhost:~$ llmcli
-Press Alt+Enter to submit; Ctrl+F to add file; Ctrl+I to add image; Ctrl+S to get completion without message; Ctrl+C or Ctrl+D to exit.
+Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
  #============================================================================#
 
 System:
@@ -136,5 +162,5 @@ This image shows a kitten sitting inside a woven basket.
 
 ```
 
-## TODO
+## <a id="#todo"></a> TODO
 - Image support for Ollama
