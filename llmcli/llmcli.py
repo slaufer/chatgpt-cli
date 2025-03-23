@@ -49,18 +49,9 @@ class LlmCli:
     self.messages = []
 
   def log_json(self):
-      """Dump the messages to a JSON file."""
-      if self.json_log_file:
-        with open(self.json_log_file, 'w') as file:
-            json.dump(self.messages, file, indent=4)
-
-  def output(self, message, silent=False):
-    if not silent:
-      print(message, end='', flush=True)
-
-    if self.log_file is not None:
-      with open(self.log_file, 'a') as file:
-        file.write(message)
+    if self.json_log_file:
+      with open(self.json_log_file, 'w') as file:
+          json.dump(self.messages, file, indent=4)
 
   def get_completion(self):
     return self.api_adapter.get_completion(self.messages)
@@ -69,9 +60,23 @@ class LlmCli:
     if self.separator is not None:
       return self.separator
     
-    return '\n\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n\n'
+    return '\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n'
 
-  def add_chat_message(self, role, content, message=None, silent=False):
+  def add_chat_message(
+      self,
+      role,
+      content,
+      file_content=None,
+      file_path=None,
+      image_content=None,
+      image_path=None,
+      message=None,
+      silent=False
+  ):
+    """
+    If this comment is still here, you know I didn't read the diff before I merged this commit
+    shit piss fuck cunt cocksucker motherfucker tits
+    """
     if role == 'file':
       if message and 'file_content' in message:
         content = message.get('content')
@@ -88,7 +93,9 @@ class LlmCli:
         "file_content": file_content
       }
       self.messages.append(message)
-      self.output('FILE: ' + message.get('content') + ' (contents hidden)', silent=silent)
+
+      if not silent:
+        print('FILE: ' + message.get('content') + ' (contents hidden)')
     elif role == 'image':
       if message and 'image_content' in message:
         content = message.get('content')
@@ -104,12 +111,16 @@ class LlmCli:
         "image_content": image_content
       }
       self.messages.append(message)
-      self.output('IMAGE: ' + message.get('content') + ' (contents hidden)', silent=silent)
+
+      if not silent:
+        print('IMAGE: ' + message.get('content') + ' (contents hidden)')
     else:
       self.messages.append({"role": role, "content": content})
-      self.output(f'{role.capitalize()}:\n\n{content}', silent=silent)
+      if not silent:
+        print(f'{role.capitalize()}:\n\n{content}')
     
-    self.output(self.get_separator(), silent=silent)
+    if not silent:
+      print(self.get_separator())
 
   def add_messages_from_args(self, args):
     silent = not self.interactive or not self.intro
@@ -151,11 +162,11 @@ class LlmCli:
 
   def add_file(self):
     input = prompt('Enter file path: ')
-    self.add_chat_message('file', input)
+    self.add_chat_message('file', os.path.expanduser(input))
   
   def add_image(self):
     input = prompt('Enter image path: ')
-    self.add_chat_message('image', input)
+    self.add_chat_message('image', os.path.expanduser(input))
 
   def change_api_adapter_name(self):
     api_adapter_name = prompt('Enter API name: ')
@@ -169,6 +180,15 @@ class LlmCli:
     self.api_adapter_options = api_adapter_options
     self.api_adapter = api_adapter
 
+  def change_json_log_file(self):
+    json_log_file = prompt('Enter JSON log file path: ')
+
+    if json_log_file.strip() == '':
+      json_log_file = None
+    else:
+      self.json_log_file = os.path.expanduser(json_log_file)
+
+    self.log_json()
 
   def menu(self):
     opts = [
@@ -177,33 +197,30 @@ class LlmCli:
       ('Change API', lambda: self.change_api_adapter_name()),
       ('Change API options', lambda: self.change_api_adapter_options()),
       ('Change JSON log file', lambda: self.change_json_log_file()),
-      ('Import JSON log file', lambda: self.import_json_log_file()),
-      ('Exit menu', lambda: 0),
+      ('Exit menu', lambda: None),
       ('Quit', lambda: sys.exit(0)),
     ]
 
     for i, opt in enumerate(opts):
-      self.output(f'[{i}] {opt[0]}\n')
+      print(f'[{i}] {opt[0]}')
 
-    self.output('\nEnter selection: ')
-    input = prompt()
-    self.output('{input}\n', silent=True)
+    input = prompt('\nEnter selection: ')
 
     try:
       choice = int(input)
     except ValueError:
-      self.output(f'Invalid selection: {input}\n')
+      print(f'Invalid selection: {input}')
       return
     
     if choice < 0 or choice >= len(opts):
-      self.output(f'Invalid selection: {choice}\n')
+      print(f'Invalid selection: {choice}')
       return
 
     opts[choice][1]()
 
   def repl(self, bindings):
     while True:
-      self.output("User:\n\n")
+      print("User:\n")
       (user_input, user_input_type) = prompt('', multiline=True, key_bindings=bindings)
 
       try:
@@ -213,26 +230,26 @@ class LlmCli:
           self.menu()
           continue
       except Exception as e:
-        self.output(f'Unable to add message: {str(e)}\n\n')
+        print(f'Unable to add message: {str(e)}\n')
         continue
 
       self.log_json()
 
       if user_input_type == 'text':
-        self.output(self.get_separator())
+        print(self.get_separator())
 
         try:
           response = self.get_completion()
           self.add_chat_message("assistant", response)
         except Exception as e:
-          self.output(f'Unable to get completion: {str(e)}\n\n')
+          print(f'Unable to get completion: {str(e)}\n')
           continue
 
         self.log_json()
 
   def main(self, args):
     if self.interactive:
-        self.output(f'{INTERACTIVE_KEYS}' + self.get_separator())
+        print(f'{INTERACTIVE_KEYS}' + self.get_separator())
 
     self.add_messages_from_args(args)
 
@@ -240,7 +257,7 @@ class LlmCli:
       response = self.get_completion()
       self.add_chat_message("assistant", response, silent=True)
       self.log_json()
-      self.output(response)
+      print(response)
       return
     
     if self.immediate:
