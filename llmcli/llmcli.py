@@ -4,14 +4,15 @@ import json
 import base64
 
 from shutil import get_terminal_size
+from typing import Iterable
 
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
 from llmcli.util import get_args, parse_api_params_str
 from llmcli.help import print_help, INTERACTIVE_KEYS
-
 from llmcli.adapters import get_api_adapter
+from llmcli.message import Message
 
 DEFAULT_SYSTEM_PROMPT = f'''
 Carefully heed the user's instructions.
@@ -48,10 +49,16 @@ class LlmCli:
 
     self.messages = []
 
+  @staticmethod
+  def encode(obj):
+    if isinstance(obj, Message):
+      return obj.to_dict()
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
+
   def log_json(self):
     if self.json_log_file:
       with open(self.json_log_file, 'w') as file:
-          json.dump(self.messages, file, indent=4)
+          json.dump(self.messages, file, indent=4, default=self.encode)
 
   def get_completion(self):
     return self.api_adapter.get_completion(self.messages)
@@ -62,61 +69,20 @@ class LlmCli:
     
     return '\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n'
 
-  def add_chat_message(
-      self,
-      role,
-      content,
-      file_content=None,
-      file_path=None,
-      image_content=None,
-      image_path=None,
-      message=None,
-      silent=False
-  ):
-    if role == 'file':
-      if message and 'file_content' in message:
-        content = message.get('content')
-        file_content = message.get('file_content')
-      else:
-        file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-        content = file_path
-        with open(file_path, 'r') as file:
-          file_content = '### FILE: `{file_path}`\n```\n' + file.read() + '\n```'
-
-      message = {
-        "role": "file",
-        "content": content,
-        "file_content": file_content
-      }
-      self.messages.append(message)
-
-      if not silent:
-        print('FILE: ' + message.get('content') + ' (contents hidden)')
-    elif role == 'image':
-      if message and 'image_content' in message:
-        content = message.get('content')
-        image_content = message.get('image_content')
-      else:
-        file_path = os.path.relpath(os.path.abspath(content), os.getcwd())
-        content = file_path
-        with open(file_path, 'rb') as file:
-          image_content = base64.b64encode(file.read()).decode('utf-8')
-      message = {
-        "role": "image",
-        "content": content,
-        "image_content": image_content
-      }
-      self.messages.append(message)
-
-      if not silent:
-        print('IMAGE: ' + message.get('content') + ' (contents hidden)')
-    else:
-      self.messages.append({"role": role, "content": content})
-      if not silent:
-        print(f'{role.capitalize()}:\n\n{content}')
-    
+  def add_chat_message(self, stream: Iterable[str] = None, message: Message = Message(), silent: bool=False):
     if not silent:
-      print(self.get_separator())
+      print(f'{message.display_name}:\n')
+
+      # if there is a stream, we have to sink the entire thing before we can be sure the Message is complete
+      if (stream is not None):
+        for chunk in stream:
+          print(chunk, end='')
+      else:
+        print(message.content)
+        
+      print('\n' + self.get_separator())
+
+    self.messages.append(message)
 
   def add_messages_from_args(self, args):
     silent = not self.interactive or not self.intro
@@ -128,41 +94,41 @@ class LlmCli:
       if arg not in ('-s', '--system', '-a', '--assistant', '-u', '--user', '-f', '--file', '-i', '--image', '-c', '--conversation'):
         continue
 
-      content = next(args_iter, None)
+      arg_value = next(args_iter, None)
 
       if arg in ('-s', '--system'):
-        args_messages.append({"role": "system", "content": content})
+        args_messages.append(Message(role="system", content=arg_value))
       elif arg in ('-a', '--assistant'):
-        args_messages.append({"role": "assistant", "content": content})
+        args_messages.append(Message(role="assistant", content=arg_value))
       elif arg in ('-u', '--user'):
-        args_messages.append({"role": "user", "content": content})
+        args_messages.append(Message(role="user", content=arg_value))
       elif arg in ('-f', '--file'):
-        args_messages.append({"role": "file", "content": content})
+        args_messages.append(Message(role="user", file_path=arg_value))
       elif arg in ('-i', '--image'):
-        args_messages.append({"role": "image", "content": content})
+        args_messages.append(Message(role="user", image_path=arg_value))
       elif arg in ('-c', '--conversation'):
         # so you can combine -c and -j on a file that doesn't exist yet
-        if not os.path.exists(content) and self.json_log_file == content:
+        if not os.path.exists(arg_value) and self.json_log_file == arg_value:
           continue
 
-        with open(content, 'r') as file:
+        with open(arg_value, 'r') as file:
           conversation = json.load(file)
           for message in conversation:
-            args_messages.append(message)
+            args_messages.append(Message.from_dict(message))
 
-    if not self.no_system_prompt and not any(message.get("role") == "system" for message in args_messages):
-      args_messages.insert(0, {"role": "system", "content": DEFAULT_SYSTEM_PROMPT})
+    if not self.no_system_prompt and not any(message.role == "system" for message in args_messages):
+      args_messages.insert(0, Message(role="system", content=DEFAULT_SYSTEM_PROMPT))
 
     for message in args_messages:
-      self.add_chat_message(message.get('role'), message.get('content'), message=message, silent=silent)
+      self.add_chat_message(message=message, silent=silent)
 
   def add_file(self):
     input = prompt('Enter file path: ')
-    self.add_chat_message('file', os.path.expanduser(input))
+    self.add_chat_message(message=Message(role="user", file_path=os.path.expanduser(input)))
   
   def add_image(self):
     input = prompt('Enter image path: ')
-    self.add_chat_message('image', os.path.expanduser(input))
+    self.add_chat_message(message=Message(role="user", image_path=os.path.expanduser(input)))
 
   def change_api_adapter_name(self):
     api_adapter_name = prompt('Enter API name: ', default=self.api_adapter_name)
@@ -212,7 +178,10 @@ class LlmCli:
       print(f'Invalid selection: {choice}')
       return
 
-    opts[choice][1]()
+    try:
+      opts[choice][1]()
+    except Exception as e:
+      print(f'Error: {e}')
 
   def repl(self, bindings):
     default_input = None
@@ -224,7 +193,7 @@ class LlmCli:
 
       try:
         if user_input_type == 'text':
-          self.add_chat_message('user', user_input, silent=True)
+          self.add_chat_message(message=Message(role="user", content=user_input), silent=True)
         elif user_input_type == 'menu':
           self.menu()
           default_input = user_input
@@ -239,8 +208,8 @@ class LlmCli:
         print(self.get_separator())
 
         try:
-          response = self.get_completion()
-          self.add_chat_message("assistant", response)
+          response_stream, response_message = self.get_completion()
+          self.add_chat_message(stream = response_stream, message=response_message)
         except Exception as e:
           print(f'Unable to get completion: {str(e)}\n')
           continue
@@ -255,14 +224,14 @@ class LlmCli:
 
     if not self.interactive:
       response = self.get_completion()
-      self.add_chat_message("assistant", response, silent=True)
+      self.add_chat_message(message=Message(role="assistant", content=response), silent=True)
       self.log_json()
       print(response)
       return
     
     if self.immediate:
       response = self.get_completion()
-      self.add_chat_message("assistant", response)
+      self.add_chat_message(message=Message(role="assistant", content=response))
 
     self.log_json()
 
@@ -285,10 +254,6 @@ def main():
   if args.help:
     print_help()
     return
-
-  if (os.environ.get("OPENAI_API_KEY") is None):
-    print("Please set the OPENAI_API_KEY environment variable to your OpenAI API key. Use -h for help.")
-    sys.exit(1)
 
   cli = LlmCli(
     log_file=args.log_file,

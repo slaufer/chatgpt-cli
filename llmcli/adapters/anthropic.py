@@ -1,7 +1,9 @@
+from typing import Iterable, Tuple, Union
 import anthropic
 import os
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
+from llmcli.message import Message
 from llmcli.util import get_mime_type
 
 
@@ -21,49 +23,59 @@ class AnthropicApiAdapter(BaseApiAdapter):
     super().__init__(params)
     self.client = anthropic.Anthropic(api_key=self.config.get('api_key'))
 
-  def get_completion(self, input_messages):
+  @classmethod
+  def output_stream(cls, response_stream: anthropic.Stream, response_message: Message):
+    for chunk in response_stream:
+      if chunk.type != 'content_block_delta' or chunk.delta.type != 'text_delta':
+        continue
+
+      fragment = chunk.delta.text
+      response_message.content += fragment
+      yield fragment
+
+  def get_completion(self, input_messages: list[Message]) -> Tuple[Union[Iterable[str], None], Message]:
     messages = []
 
     for message in input_messages:
-      if message.get('role') == 'system':
-        self.system = message.get('content')
+      if message.role == 'system':
+        self.system = message.content
         continue
 
-      if message.get('role') == 'file':
+      if message.file_content is not None:
         out_message = {
-          "role": "user",
+          "role": message.role,
           "content": [
             {
               "type": "text",
-              "text": message.get('file_content')
+              "text": f'### FILE: {message.file_path}\n\n```\n{message.file_content}\n```',
             }
           ]
         }
-      elif message.get('role') == 'image':
+      elif message.image_content is not None:
         out_message = {
-          "role": "user",
+          "role": message.role,
           "content": [
             {
               "type": "text",
-              "text": 'IMAGE: ' + message.get('content')
+              "text": f'### IMAGE: {message.image_path}',
             },
             {
               "type": "image",
               "source": {
                 "type": "base64",
-                "media_type": get_mime_type(message.get('content')),
-                "data": message.get('image_content')
+                "media_type": message.image_type,
+                "data": message.image_content,
               }
             }
           ]
         }
       else:
         out_message = {
-          "role": message.get('role'),
+          "role": message.role,
           "content": [
             {
               "type": "text",
-              "text": message.get('content')
+              "text": message.content
             }
           ]
         }
@@ -90,6 +102,16 @@ class AnthropicApiAdapter(BaseApiAdapter):
 
     req['model'] = self.config.get('model')
     req['messages'] = messages
+    req['stream'] = True
 
-    response = self.client.messages.create(**req)
-    return response.content[0].text
+    response_stream = self.client.messages.create(**req)
+    
+    response_message = Message(
+      role="assistant",
+      content='',
+      adapter=self.NAME,
+      adapter_options=self.config,
+      display_name=self.get_display_name(),
+    )
+
+    return self.output_stream(response_stream, response_message), response_message

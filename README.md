@@ -69,8 +69,8 @@ Options:
   Message arguments are added to the conversation in the order in which they are specified on the command line.
 
   API ARGUMENTS:
-  -p, --api                    Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
-  -o, --api-options            API options, in the format <key1>=<value1>;<key2>=<value2>;... (See ADAPTERS below.)
+  -p, --api <identifier>       Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
+  -o, --api-options <options>  API options, in the format <key1>=<value1>;<key2>=<value2>;... (See ADAPTERS below.)
 
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
@@ -211,4 +211,4 @@ The README is well-structured, using Markdown with anchored sections and clear, 
 
 ## <a name="todo"></a> TODO
 - Image support for Ollama
-- Improve internal data organization and JSON conversation logs
+- Web search and annotations for OpenAI and (and Anthropic?)

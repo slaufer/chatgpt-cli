@@ -1,7 +1,9 @@
 import os
+from typing import Iterable, Tuple, Union
 
 from openai import OpenAI
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
+from llmcli.message import Message
 from llmcli.util import get_mime_type
 
 
@@ -23,40 +25,55 @@ class OpenAiApiAdapter(BaseApiAdapter):
     super().__init__(params)
     self.client = OpenAI(api_key=self.config.get('api_key'))
 
-  def get_completion(self, input_messages):
+  @classmethod
+  def output_stream(cls, response_stream, response_message: Message):
+    for chunk in response_stream:
+      fragment = chunk.choices[0].delta.content
+
+      if fragment is None:
+        continue
+      
+      response_message.content += fragment
+      yield fragment
+
+  def get_completion(self, input_messages: list[Message]) -> Tuple[Union[Iterable[str], None], Message]:
     messages = []
 
     for message in input_messages:
-      if message.get('role') == 'file':
+      if message.file_content is not None:
         messages.append({
-          "role": "user",
-          "content": message.get('file_content')
+          "role": message.role,
+          "content": message.file_content,
         })
-      elif message.get('role') == 'image':
+      elif message.image_content is not None:
         if self.config.get('max_tokens') is None:
           self.config['max_tokens'] = 300
 
         messages.append({
-          "role": "user",
+          "role": message.role,
           "content": [
             {
               "type": "text",
-              "text": 'IMAGE: ' + message.get('content')
+              "text": f'### IMAGE: {message.image_path}',
             },
             {
               "type": "image_url",
               "image_url": {
-                "url": 'data:' + get_mime_type(message.get('content')) + ';base64,' + message.get('image_content')
+                "url": 'data:' + message.image_type + ';base64,' + message.image_content
               }
             }
           ]
         })
       else:
-        messages.append(message)
+        messages.append({
+          "role": message.role,
+          "content": message.content,
+        })
 
     req = {
       "messages": messages,
       "model": self.config.get('model'),
+      "stream": True,
     }
 
     if self.config.get('max_tokens') is not None:
@@ -74,5 +91,14 @@ class OpenAiApiAdapter(BaseApiAdapter):
     if self.config.get('presence_penalty') is not None:
       req["presence_penalty"] = self.config.get('presence_penalty')
 
-    response = self.client.chat.completions.create(**req)
-    return response.choices[0].message.content
+    response_stream = self.client.chat.completions.create(**req)
+    
+    response_message = Message(
+      role="assistant",
+      content='',
+      adapter=self.NAME,
+      adapter_options=self.config,
+      display_name=self.get_display_name(),
+    )
+
+    return self.output_stream(response_stream, response_message), response_message

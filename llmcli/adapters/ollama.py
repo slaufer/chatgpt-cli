@@ -1,6 +1,8 @@
+from typing import Iterable, Tuple, Union
 import ollama
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
+from llmcli.message import Message
 
 
 class OllamaApiAdapter(BaseApiAdapter):
@@ -27,20 +29,30 @@ class OllamaApiAdapter(BaseApiAdapter):
   def __init__(self, params):
     super().__init__(params)
 
-  def get_completion(self, input_messages):
+  @classmethod
+  def output_stream(cls, response_stream, response_message: Message):
+    for chunk in response_stream:
+      fragment = chunk['message']['content']
+      response_message.content += fragment
+      yield fragment
+
+  def get_completion(self, input_messages: list[Message]) -> Tuple[Union[Iterable[str], None], Message]:
     messages = []
 
     for message in input_messages:
-      if message.get('role') == 'file':
+      if message.file_content is not None:
         messages.append({
-          "role": "user",
-          "content": message.get('file_content')
+          "role": message.role,
+          "content": f'### FILE: {message.file_path}\n\n```\n{message.file_content}\n```'
         })
-      elif message.get('role') == 'image':
+      elif message.image_content == 'image':
         # TODO
         pass
       else:
-        messages.append(message)
+        messages.append({
+          "role": message.role,
+          "content": message.content
+        })
 
     options = ollama.Options()
 
@@ -83,5 +95,20 @@ class OllamaApiAdapter(BaseApiAdapter):
     if self.config.get('min_p') is not None:
       options.min_p = float(self.config.get('min_p'))
 
-    response = ollama.chat(model=self.config.get('model'), messages=messages, options=options)
-    return response.message.content
+
+    response_stream = ollama.chat(
+      model=self.config.get('model'),
+      messages=messages,
+      options=options,
+      stream=True
+    )
+
+    response_message = Message(
+      role="assistant",
+      content='',
+      adapter=self.NAME,
+      adapter_options=self.config,
+      display_name=self.get_display_name(),
+    )
+
+    return self.output_stream(response_stream, response_message), response_message
