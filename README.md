@@ -9,12 +9,14 @@ LLM CLI is a command-line tool to chat with LLMs via the OpenAI, Anthropic, and 
 - [Usage](#usage)
   - [Help message](#help-message)
   - [Example usage](#example-usage)
+    - [Interactive Example](#usage-interactive)
+    - [Non-Interactive Example](#usage-noninteractive)
 - [TODO](#todo)
 
 ## <a name="installation"></a> Installation:
 
 ### <a name="install-with-pipx"></a> Install with pipx (recommended)
-The easiest way to install is using pipx:
+The easiest way to install is using <a href="https://pipx.pypa.io/">pipx</a>:
 
 `pipx install git+https://github.com/slaufer/chatgpt-cli`
 
@@ -128,7 +130,7 @@ Options:
 
 ### <a name="example-usage"></a> Example usage:
 
-#### Describing an image in interactive mode, using default settings:
+#### <a name="usage-interactive"></a> Describing an image in interactive mode, using default settings:
 
 ```
 slaufer@localhost:~$ llmcli
@@ -184,7 +186,7 @@ Assistant:
 This image shows a kitten sitting inside a woven basket.
 ```
 
-#### Describing a file in non-interactive mode, using Claude 3.5 Haiku, with a medium temperature setting:
+#### <a name="usage-noninteractive"></a> Describing a file in non-interactive mode, using Claude 3.5 Haiku, with a medium temperature setting:
 ```
 slaufer@localhost:~/repos/chatgpt-cli$ llmcli -p anthropic -o 'model=claude-3-5-haiku-latest;temperature=0.5' -f README.md -a 'Describe the contents of this file.' -n
 
@@ -209,3 +211,4 @@ The README is well-structured, using Markdown with anchored sections and clear, 
 
 ## <a name="todo"></a> TODO
 - Image support for Ollama
+- Improve internal data organization and JSON conversation logs
