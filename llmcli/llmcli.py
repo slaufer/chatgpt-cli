@@ -66,7 +66,7 @@ class LlmCli:
   def get_separator(self):
     if self.separator is not None:
       return self.separator
-    
+
     return '\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n'
 
   def add_chat_message(self, stream: Iterable[str] = None, message: Message = Message(), silent: bool=False):
@@ -79,7 +79,7 @@ class LlmCli:
           print(chunk, end='')
       else:
         print(message.content)
-        
+
       print('\n' + self.get_separator())
 
     self.messages.append(message)
@@ -224,16 +224,15 @@ class LlmCli:
 
     if not self.interactive:
       response_stream, response_message = self.get_completion()
-      list(response_stream)
-      self.add_chat_message(message=response_message, silent=True)
+      for fragment in response_stream:
+          print(fragment, end='')
+      self.add_chat_message(stream=response_stream, message=response_message, silent=True)
       self.log_json()
-      print(response_message.content)
       return
     
     if self.immediate:
       response_stream, response_message = self.get_completion()
-      list(response_stream)
-      self.add_chat_message(message=response_message)
+      self.add_chat_message(stream=response_stream, message=response_message)
 
     self.log_json()
 
