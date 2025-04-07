@@ -223,15 +223,17 @@ class LlmCli:
     self.add_messages_from_args(args)
 
     if not self.interactive:
-      response = self.get_completion()
-      self.add_chat_message(message=Message(role="assistant", content=response), silent=True)
+      response_stream, response_message = self.get_completion()
+      list(response_stream)
+      self.add_chat_message(message=response_message, silent=True)
       self.log_json()
-      print(response)
+      print(response_message.content)
       return
     
     if self.immediate:
-      response = self.get_completion()
-      self.add_chat_message(message=Message(role="assistant", content=response))
+      response_stream, response_message = self.get_completion()
+      list(response_stream)
+      self.add_chat_message(message=response_message)
 
     self.log_json()
 
