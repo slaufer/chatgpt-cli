@@ -9,9 +9,9 @@ from typing import Iterable
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_args, parse_api_params_str
+from llmcli.util import get_args, parse_api_params
 from llmcli.help import print_help, INTERACTIVE_KEYS
-from llmcli.adapters import get_api_adapter
+from llmcli.adapters import get_api_adapter, get_adapter_list
 from llmcli.message import Message
 
 DEFAULT_SYSTEM_PROMPT = f'''
@@ -44,8 +44,8 @@ class LlmCli:
     self.no_system_prompt = no_system_prompt
 
     self.api_adapter_name = api_adapter_name
-    self.api_adapter_options = api_adapter_options
-    self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params_str(self.api_adapter_options))
+    self.api_adapter_options = api_adapter_options or []
+    self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
 
     self.messages = []
 
@@ -131,16 +131,56 @@ class LlmCli:
     self.add_chat_message(message=Message(role="user", image_path=os.path.expanduser(input)))
 
   def change_api_adapter_name(self):
-    api_adapter_name = prompt('Enter API name: ', default=self.api_adapter_name)
-    api_adapter = get_api_adapter(api_adapter_name, parse_api_params_str(self.api_adapter_options))
-    self.api_adapter_name = api_adapter_name
-    self.api_adapter = api_adapter
+    print('\nAvailable API Adapters:')
+
+    adapter_list = get_adapter_list()
+
+    for i, option in enumerate(adapter_list):
+      print(f'[{i}] {option.HR_NAME or option.NAME}')
+    input = prompt('\nEnter selection: ')
+
+    try:
+      choice = int(input)
+    except ValueError:
+      print(f'Invalid selection: {input}')
+      return
+  
+    if choice < 0 or choice > len(self.api_adapter_options) + 1:
+      print(f'Invalid selection: {choice}')
+      return
+    
+    self.api_adapter_name = adapter_list[choice].NAME
+    self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
 
   def change_api_adapter_options(self):
-    api_adapter_options = prompt('Enter API options: ', default=self.api_adapter_options)
-    api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params_str(api_adapter_options))
-    self.api_adapter_options = api_adapter_options
-    self.api_adapter = api_adapter
+    while True:
+      print('\nAPI Adapter Options:')
+      print('[0] Return to previous menu')
+      print('[1] Add an option')
+      for i, option in enumerate(self.api_adapter_options):
+        print(f'[{i+2}] Remove {option}')
+
+      input = prompt('\nEnter selection: ')
+
+      try:
+        choice = int(input)
+      except ValueError:
+        print(f'Invalid selection: {input}')
+        continue
+    
+      if choice < 0 or choice > len(self.api_adapter_options) + 1:
+        print(f'Invalid selection: {choice}')
+        continue
+
+      if choice == 0:
+        self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
+        return
+      
+      if choice == 1:
+        input = prompt('\nEnter option (key=value): ')
+        self.api_adapter_options.append(input)
+      else:
+        self.api_adapter_options.pop(choice - 2)
 
   def change_json_log_file(self):
     json_log_file = prompt('Enter JSON log file path: ')
@@ -153,35 +193,39 @@ class LlmCli:
     self.log_json()
 
   def menu(self):
-    opts = [
-      ('Add a file', lambda: self.add_file()),
-      ('Add an image', lambda: self.add_image()),
-      ('Change API', lambda: self.change_api_adapter_name()),
-      ('Change API options', lambda: self.change_api_adapter_options()),
-      ('Change JSON log file', lambda: self.change_json_log_file()),
-      ('Exit menu', lambda: None),
-      ('Quit', lambda: sys.exit(0)),
-    ]
+    while True:
+      opts = [
+        ('Exit menu', lambda: None),
+        ('Add a file', lambda: self.add_file()),
+        ('Add an image', lambda: self.add_image()),
+        ('Change API', lambda: self.change_api_adapter_name()),
+        ('Change API options', lambda: self.change_api_adapter_options()),
+        ('Change JSON log file', lambda: self.change_json_log_file()),
+      ]
 
-    for i, opt in enumerate(opts):
-      print(f'[{i}] {opt[0]}')
+      print('\nMenu:')
+      for i, opt in enumerate(opts):
+        print(f'[{i}] {opt[0]}')
 
-    input = prompt('\nEnter selection: ')
+      input = prompt('\nEnter selection: ')
 
-    try:
-      choice = int(input)
-    except ValueError:
-      print(f'Invalid selection: {input}')
-      return
-    
-    if choice < 0 or choice >= len(opts):
-      print(f'Invalid selection: {choice}')
-      return
+      try:
+        choice = int(input)
+      except ValueError:
+        print(f'Invalid selection: {input}')
+        continue
+      
+      if choice < 0 or choice >= len(opts):
+        print(f'Invalid selection: {choice}')
+        continue
 
-    try:
-      opts[choice][1]()
-    except Exception as e:
-      print(f'Error: {e}')
+      if choice == 0:
+        break
+      
+      try:
+        opts[choice][1]()
+      except Exception as e:
+        print(f'Error: {e}')
 
   def repl(self, bindings):
     default_input = None

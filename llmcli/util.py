@@ -34,7 +34,7 @@ def get_args():
   parser.add_argument('-c', '--conversation', action='append')
   parser.add_argument('-d', '--no-system-prompt', action='store_true')
   parser.add_argument('-p', '--api', choices=['openai', 'anthropic', 'ollama'], default='openai')
-  parser.add_argument('-o', '--api-options', default='')
+  parser.add_argument('-o', '--api-options', action='append')
 
   # Other arguments
   parser.add_argument('-n', '--non-interactive', action='store_true')
@@ -47,10 +47,10 @@ def get_args():
 
   return parser.parse_args()
 
-def parse_api_params_str(params_str):
+def parse_api_params(params: list[str] = []):
     return dict([
-      [s.strip() for s in param_str.split('=')]
-      for param_str in params_str.split(';')
-      if '=' in param_str
+      [s.strip() for s in param.split('=')]
+      for param in params
+      if '=' in param
     ])
 

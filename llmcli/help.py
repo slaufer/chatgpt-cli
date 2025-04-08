@@ -30,7 +30,9 @@ Options:
 
   API ARGUMENTS:
   -p, --api <identifier>       Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
-  -o, --api-options <options>  API options, in the format <key1>=<value1>;<key2>=<value2>;... (See ADAPTERS below.)
+  -o, --api-options <options>  API option, in the format key=value. May be used multiple times.  (See ADAPTERS below.)
+
+  See ADAPTERS below for a list of API identifiers.
 
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.

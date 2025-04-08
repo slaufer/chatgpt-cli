@@ -77,19 +77,19 @@ class OpenAiApiAdapter(BaseApiAdapter):
     }
 
     if self.config.get('max_tokens') is not None:
-      req["max_tokens"] = self.config.get('max_tokens')
+      req["max_tokens"] = int(self.config.get('max_tokens'))
 
     if self.config.get('temperature') is not None:
-      req["temperature"] = self.config.get('temperature')
+      req["temperature"] = float(self.config.get('temperature'))
 
     if self.config.get('top_p') is not None:
-      req["top_p"] = self.config.get('top_p')
+      req["top_p"] = float(self.config.get('top_p'))
 
     if self.config.get('frequency_penalty') is not None:
-      req["frequency_penalty"] = self.config.get('frequency_penalty')
+      req["frequency_penalty"] = float(self.config.get('frequency_penalty'))
 
     if self.config.get('presence_penalty') is not None:
-      req["presence_penalty"] = self.config.get('presence_penalty')
+      req["presence_penalty"] = float(self.config.get('presence_penalty'))
 
     response_stream = self.client.chat.completions.create(**req)
     
