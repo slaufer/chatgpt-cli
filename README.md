@@ -69,8 +69,10 @@ Options:
   Message arguments are added to the conversation in the order in which they are specified on the command line.
 
   API ARGUMENTS:
-  -p, --api <identifier>       Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
-  -o, --api-options <options>  API option, in the format key=value. May be used multiple times.  (See ADAPTERS below.)
+  -p, --api <identifier>       Identifier of the API adapter to use. (default: openai)
+  -o, --api-options <options>  API option, in the format key=value. May be used multiple times.
+
+  See ADAPTERS below for a list of API identifiers.
 
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
@@ -188,7 +190,7 @@ This image shows a kitten sitting inside a woven basket.
 
 #### <a name="usage-noninteractive"></a> Describing a file in non-interactive mode, using Claude 3.5 Haiku, with a medium temperature setting:
 ```
-slaufer@localhost:~/repos/chatgpt-cli$ llmcli -p anthropic -o 'model=claude-3-5-haiku-latest;temperature=0.5' -f README.md -a 'Describe the contents of this file.' -n
+slaufer@localhost:~/repos/chatgpt-cli$ llmcli -p anthropic -o model=claude-3-5-haiku-latest -o temperature=0.5 -f README.md -a 'Describe the contents of this file.' -n
 
 The file appears to be a README.md for the LLM CLI (formerly chatgpt-cli) command-line tool. It provides:
 
