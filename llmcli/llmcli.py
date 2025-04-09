@@ -76,7 +76,7 @@ class LlmCli:
       # if there is a stream, we have to sink the entire thing before we can be sure the Message is complete
       if (stream is not None):
         for chunk in stream:
-          print(chunk, end='')
+          print(chunk, end='', flush=True)
       else:
         print(message.content)
 
