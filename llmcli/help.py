@@ -3,7 +3,7 @@ import sys
 
 from llmcli.adapters import get_adapter_list
 
-INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.'
+INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+B to show the menu; Ctrl+C or Ctrl+D to exit.'
 
 def print_help():
   exec_path = os.path.basename(sys.argv[0])

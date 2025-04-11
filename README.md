@@ -82,7 +82,7 @@ Options:
   -q, --no-intro               Don't print the system prompt, or messages specified on the command line.
   -h, --help                   Print this help message and exit.
 
-  By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
+  By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+B to show the menu; Ctrl+C or Ctrl+D to exit.
 
   TIP: Try `llmcli -c '@mylog.json' -j mylog.json` to persist conversations between sessions.
 
