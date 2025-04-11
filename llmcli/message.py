@@ -18,7 +18,7 @@ class Message:
       adapter_options=None,
       display_name=None,
       extra=None
-  ):
+  ) -> None:
     self.role = role
     self.content = content
     self.file_content = file_content
@@ -59,7 +59,7 @@ class Message:
   def to_dict(self) -> dict:
     return {k: v for k, v in self.__dict__.items() if v is not None}
   
-  def to_json(self):
+  def to_json(self) -> str:
     return json.dumps(self.to_dict())
   
   @staticmethod

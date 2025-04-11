@@ -4,7 +4,7 @@ import json
 import base64
 
 from shutil import get_terminal_size
-from typing import Iterable
+from typing import Iterable, Tuple, Union
 
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
@@ -25,8 +25,7 @@ Do not include any extraneous or tangential details unless you are instructed to
 class LlmCli:
   def __init__(
     self,
-    log_file=None,
-    log_file_json=None,
+    log_file_json: str | None =None,
     interactive=True,
     immediate=False,
     separator = None,
@@ -35,7 +34,6 @@ class LlmCli:
     api_adapter_name=None,
     api_adapter_options=None,
   ):
-    self.log_file = log_file
     self.json_log_file = log_file_json
     self.interactive = interactive
     self.immediate = immediate
@@ -53,23 +51,22 @@ class LlmCli:
   def encode(obj):
     if isinstance(obj, Message):
       return obj.to_dict()
-    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
   def log_json(self):
     if self.json_log_file:
       with open(self.json_log_file, 'w') as file:
           json.dump(self.messages, file, indent=4, default=self.encode)
 
-  def get_completion(self):
+  def get_completion(self) -> Tuple[Union[Iterable[str], None], Message]:
     return self.api_adapter.get_completion(self.messages)
 
-  def get_separator(self):
+  def get_separator(self) -> str:
     if self.separator is not None:
       return self.separator
 
     return '\n #' + ('=' * (get_terminal_size().columns - 4)) + '#\n'
 
-  def add_chat_message(self, stream: Iterable[str] = None, message: Message = Message(), silent: bool=False):
+  def add_chat_message(self, stream: Iterable[str] = None, message: Message = Message(), silent: bool=False) -> None:
     if not silent:
       print(f'{message.display_name}:\n')
 
@@ -84,7 +81,18 @@ class LlmCli:
 
     self.messages.append(message)
 
-  def add_messages_from_args(self, args):
+  def add_messages_from_args(self, args: list[str]) -> None:
+    """
+    Add messages from the command line arguments. Works in parallel with argparse, parsing the already-validated
+    arguments. This is necessary to ensure that messages defined in command line arguments are added in the correct
+    order.
+
+    Args:
+      args: The list of command line arguments (i.e. sys.argv[1:])
+
+    Returns:
+      None
+    """
     silent = not self.interactive or not self.intro
 
     args_iter = iter(args)
@@ -122,15 +130,15 @@ class LlmCli:
     for message in args_messages:
       self.add_chat_message(message=message, silent=silent)
 
-  def add_file(self):
+  def add_file(self) -> None:
     input = prompt('Enter file path: ')
     self.add_chat_message(message=Message(role="user", file_path=os.path.expanduser(input)))
   
-  def add_image(self):
+  def add_image(self) -> None:
     input = prompt('Enter image path: ')
     self.add_chat_message(message=Message(role="user", image_path=os.path.expanduser(input)))
 
-  def change_api_adapter_name(self):
+  def change_api_adapter_name(self) -> None:
     print('\nAvailable API Adapters:')
 
     adapter_list = get_adapter_list()
@@ -152,7 +160,7 @@ class LlmCli:
     self.api_adapter_name = adapter_list[choice].NAME
     self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
 
-  def change_api_adapter_options(self):
+  def change_api_adapter_options(self) -> None:
     while True:
       print('\nAPI Adapter Options:')
       print('[0] Return to previous menu')
@@ -182,7 +190,7 @@ class LlmCli:
       else:
         self.api_adapter_options.pop(choice - 2)
 
-  def change_json_log_file(self):
+  def change_json_log_file(self) -> None:
     json_log_file = prompt('Enter JSON log file path: ')
 
     if json_log_file.strip() == '':
@@ -192,7 +200,7 @@ class LlmCli:
 
     self.log_json()
 
-  def menu(self):
+  def menu(self) -> None:
     while True:
       opts = [
         ('Exit menu', lambda: None),
@@ -227,7 +235,7 @@ class LlmCli:
       except Exception as e:
         print(f'Error: {e}')
 
-  def repl(self, bindings):
+  def repl(self, bindings: KeyBindings) -> None:
     default_input = None
 
     while True:
@@ -260,7 +268,7 @@ class LlmCli:
 
         self.log_json()
 
-  def main(self, args):
+  def main(self, args: list[str]) -> None:
     if self.interactive:
         print(f'{INTERACTIVE_KEYS}' + self.get_separator())
 
@@ -301,7 +309,6 @@ def main():
     return
 
   cli = LlmCli(
-    log_file=args.log_file,
     log_file_json=args.log_file_json,
     interactive=not args.non_interactive,
     immediate=args.immediate,

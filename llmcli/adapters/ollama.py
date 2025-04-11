@@ -26,11 +26,11 @@ class OllamaApiAdapter(BaseApiAdapter):
   ]
   EXTRA_HELP = "By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable."
 
-  def __init__(self, params):
+  def __init__(self, params) -> None:
     super().__init__(params)
 
-  @classmethod
-  def output_stream(cls, response_stream, response_message: Message):
+  @staticmethod
+  def output_stream(response_stream: Iterable[dict], response_message: Message) -> Iterable[str]:
     for chunk in response_stream:
       fragment = chunk['message']['content']
       response_message.content += fragment

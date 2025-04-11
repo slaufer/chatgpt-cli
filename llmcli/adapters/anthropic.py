@@ -23,8 +23,8 @@ class AnthropicApiAdapter(BaseApiAdapter):
     super().__init__(params)
     self.client = anthropic.Anthropic(api_key=self.config.get('api_key'))
 
-  @classmethod
-  def output_stream(cls, response_stream: anthropic.Stream, response_message: Message):
+  @staticmethod
+  def output_stream(response_stream: anthropic.Stream, response_message: Message) -> Iterable[str]:
     for chunk in response_stream:
       if chunk.type != 'content_block_delta' or chunk.delta.type != 'text_delta':
         continue

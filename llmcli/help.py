@@ -36,7 +36,6 @@ Options:
 
   OTHER ARGUMENTS:
   -n, --non-interactive        Disable interactive mode, get a completion and exit. Use message arguments to specify the conversation.
-  -l, --log-file <filename>    Log output to a specified file.
   -j, --log-file-json <file>   Output a JSON-formatted log to a specified file.
   -g, --immediate              Get an assistant response immediately, before entering interactive mode.
   -x, --separator <separator>  Specify the separator to use between messages.

@@ -1,5 +1,6 @@
 import json
 
+from llmcli.adapters.base import BaseApiAdapter
 from llmcli.adapters.openai import OpenAiApiAdapter
 from llmcli.adapters.anthropic import AnthropicApiAdapter
 from llmcli.adapters.ollama import OllamaApiAdapter
@@ -13,7 +14,7 @@ def get_adapter_list():
 
 ADAPTER_INSTANCE_CACHE = {}
 
-def get_api_adapter(name, params):
+def get_api_adapter(name: str, params: dict) -> BaseApiAdapter:
   params_str = json.dumps(params, sort_keys=True)
   adapter_instance = ADAPTER_INSTANCE_CACHE.get((name, params_str))
 

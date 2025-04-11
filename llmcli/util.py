@@ -1,7 +1,7 @@
 import argparse
 import mimetypes
 
-def get_mime_type(image_path):
+def get_mime_type(image_path: str) -> str:
   """
   Determine the MIME type of a file based on its file extension.
 
@@ -18,7 +18,7 @@ def get_mime_type(image_path):
   
   return mime_type
 
-def get_args():
+def get_args() -> argparse.Namespace:
   parser = argparse.ArgumentParser(
     description='ChatGPT CLI',
     add_help=False,
@@ -38,7 +38,6 @@ def get_args():
 
   # Other arguments
   parser.add_argument('-n', '--non-interactive', action='store_true')
-  parser.add_argument('-l', '--log-file')
   parser.add_argument('-j', '--log-file-json')
   parser.add_argument('-g', '--immediate', action='store_true')
   parser.add_argument('-x', '--separator')
@@ -47,7 +46,7 @@ def get_args():
 
   return parser.parse_args()
 
-def parse_api_params(params: list[str] = []):
+def parse_api_params(params: list[str] = []) -> dict:
     return dict([
       [s.strip() for s in param.split('=')]
       for param in params

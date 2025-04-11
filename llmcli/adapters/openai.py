@@ -1,7 +1,9 @@
 import os
 from typing import Iterable, Tuple, Union
 
-from openai import OpenAI
+from openai import OpenAI, Stream
+from openai.types.chat import ChatCompletionChunk
+
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
 from llmcli.message import Message
 from llmcli.util import get_mime_type
@@ -25,8 +27,8 @@ class OpenAiApiAdapter(BaseApiAdapter):
     super().__init__(params)
     self.client = OpenAI(api_key=self.config.get('api_key'))
 
-  @classmethod
-  def output_stream(cls, response_stream, response_message: Message):
+  @staticmethod
+  def output_stream(response_stream: Stream[ChatCompletionChunk], response_message: Message) -> Iterable[str]:
     for chunk in response_stream:
       fragment = chunk.choices[0].delta.content
 

@@ -1,12 +1,14 @@
-from typing import Iterable, Tuple, Union
+from typing import Any, Iterable, Tuple, Union
 from llmcli.message import Message
 
 
 class BaseApiAdapter:
+  NAME = 'base'
+  HR_NAME = 'Base API Adapter'
   OPTIONS = []
   config = {}
 
-  def __init__(self, params):
+  def __init__(self, params: dict) -> None:
     self.config = {}
 
     for option in self.OPTIONS:
@@ -18,24 +20,24 @@ class BaseApiAdapter:
   def get_completion(self, input_messages: list[Message]) -> Tuple[Union[Iterable[str], None], Message]:
     raise NotImplementedError('get_completion() must be implemented in a subclass')
   
-  def get_display_name(self):
+  def get_display_name(self) -> str:
     model = self.config.get('model')
 
     if model is not None:
-      return f'{self.NAME} / {model}'
+      return f'{self.HR_NAME} / {model}'
     else:
-      return f'{self.NAME}'
+      return f'{self.HR_NAME}'
 
 
 class ApiAdapterOption:
   def __init__(
       self,
-      name = None,
-      hr_name = None,
-      description = None,
-      default = None,
-      default_help_override = None,
-  ):
+      name: str,
+      hr_name: str,
+      description: str,
+      default: Any = None,
+      default_help_override: str | None = None,
+  ) -> None:
     self.name = name
     self.hr_name = hr_name
     self.description = description
