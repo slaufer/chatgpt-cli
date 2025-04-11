@@ -89,13 +89,13 @@ class AnthropicApiAdapter(BaseApiAdapter):
     req = {}
 
     if self.config.get('max_tokens') is not None:
-      req["max_tokens"] = self.config.get('max_tokens')
+      req["max_tokens"] = int(self.config.get('max_tokens'))
 
     if self.config.get('temperature') is not None:
-      req["temperature"] = self.config.get('temperature')
+      req["temperature"] = float(self.config.get('temperature'))
 
     if self.config.get('top_p') is not None:
-      req["top_p"] = self.config.get('top_p')
+      req["top_p"] = float(self.config.get('top_p'))
 
     if self.system is not None:
       req['system'] = self.system

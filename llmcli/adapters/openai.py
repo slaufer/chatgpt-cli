@@ -23,6 +23,9 @@ class OpenAiApiAdapter(BaseApiAdapter):
   ]
   EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
 
+  # used when an image message is submitted without a MAX_TOKENS setting
+  SAFE_MAX_TOKENS = 1000
+
   def __init__(self, params):
     super().__init__(params)
     self.client = OpenAI(api_key=self.config.get('api_key'))
@@ -40,6 +43,7 @@ class OpenAiApiAdapter(BaseApiAdapter):
 
   def get_completion(self, input_messages: list[Message]) -> Tuple[Union[Iterable[str], None], Message]:
     messages = []
+    max_tokens = self.config.get('max_tokens')
 
     for message in input_messages:
       if message.file_content is not None:
@@ -48,8 +52,8 @@ class OpenAiApiAdapter(BaseApiAdapter):
           "content": message.file_content,
         })
       elif message.image_content is not None:
-        if self.config.get('max_tokens') is None:
-          self.config['max_tokens'] = 300
+        if max_tokens is None:
+          max_tokens = self.SAFE_MAX_TOKENS
 
         messages.append({
           "role": message.role,
@@ -78,8 +82,8 @@ class OpenAiApiAdapter(BaseApiAdapter):
       "stream": True,
     }
 
-    if self.config.get('max_tokens') is not None:
-      req["max_tokens"] = int(self.config.get('max_tokens'))
+    if max_tokens is not None:
+      req["max_tokens"] = int(max_tokens)
 
     if self.config.get('temperature') is not None:
       req["temperature"] = float(self.config.get('temperature'))

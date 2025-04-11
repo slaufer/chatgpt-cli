@@ -61,16 +61,16 @@ Options:
   -s, --system <message>       Add a system prompt message. If not specified, a default system prompt is used.
   -a, --assistant <message>    Add an assistant response message.
   -u, --user <message>         Add a user prompt message.
-  -f, --file <filename>        Add a user prompt message from a file.
-  -i, --image <filename>       Add a user prompt message from an image. If --max-tokens is not specified, a default value may be applied.
-  -c, --conversation <file>    Load a previous conversation from a file. (see -j / --log-file-json)
+  -f, --file <path>            Add a user prompt message containing a file.
+  -i, --image <path>           Add a user prompt message containing an image.
+  -c, --conversation <json>    Load a previous conversation from a JSON blob. TIP: use '@/path/to/yourlog.json' (see --log-file-json)
   -d, --no-system-prompt       Don't add a default system prompt if none is present.
 
-  Message arguments are added to the conversation in the order in which they are specified on the command line.
+  Message arguments are added to the conversation in the order in which they are specified on the command line. Use '@<path>' to load argument content from a file, '@-' for stdin.
 
   API ARGUMENTS:
-  -p, --api <identifier>       Identifier of the API adapter to use. (default: openai)
-  -o, --api-options <options>  API option, in the format key=value. May be used multiple times.
+  -p, --api <identifier>       Identifier of the API adapter to use. (See ADAPTERS below.) (default: openai)
+  -o, --api-options <options>  API option, in the format key=value. May be used multiple times.  (See ADAPTERS below.)
 
   See ADAPTERS below for a list of API identifiers.
 
@@ -84,7 +84,7 @@ Options:
 
   By default, the program begins in interactive mode. Interactive mode uses a multi-line editor. Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
 
-  TIP: Try `llmcli -c mylog.json -j mylog.json` to persist conversations between sessions.
+  TIP: Try `llmcli -c '@mylog.json' -j mylog.json` to persist conversations between sessions.
 
   ADAPTERS:
     OpenAI (openai)
@@ -135,7 +135,7 @@ Options:
 
 ```
 slaufer@localhost:~$ llmcli
-Press Alt+Enter to submit; Ctrl+M to show the menu; Ctrl+C or Ctrl+D to exit.
+Press Alt+Enter to submit; Ctrl+B to show the menu; Ctrl+C or Ctrl+D to exit.
  #============================================================================#
 
 System:

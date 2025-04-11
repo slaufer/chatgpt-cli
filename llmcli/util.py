@@ -1,5 +1,6 @@
 import argparse
 import mimetypes
+import os
 
 def get_mime_type(image_path: str) -> str:
   """
@@ -53,3 +54,5 @@ def parse_api_params(params: list[str] = []) -> dict:
       if '=' in param
     ])
 
+def normalize_path(path: str) -> str:
+   return os.path.relpath(os.path.abspath(os.path.expanduser(path)), os.getcwd())

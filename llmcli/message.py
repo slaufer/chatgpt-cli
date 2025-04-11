@@ -2,7 +2,7 @@ import os
 import json
 import base64
 
-from llmcli.util import get_mime_type
+from llmcli.util import get_mime_type, normalize_path
 
 class Message:
   def __init__(
@@ -35,7 +35,7 @@ class Message:
 
   def load_files(self) -> None:
     if self.file_path is not None:
-      self.file_path = os.path.relpath(os.path.abspath(self.file_path), os.getcwd())
+      self.file_path = normalize_path(self.file_path)
 
       if self.file_content is None:
         with open(self.file_path, 'r') as file:
@@ -45,7 +45,7 @@ class Message:
 
 
     elif self.image_path is not None:
-      self.image_path = os.path.relpath(os.path.abspath(self.image_path), os.getcwd())
+      self.image_path = normalize_path(self.image_path)
 
       if self.image_content is None:
         with open(self.image_path, 'rb') as file:

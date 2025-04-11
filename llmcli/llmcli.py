@@ -9,7 +9,7 @@ from typing import Iterable, Tuple, Union
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_args, parse_api_params
+from llmcli.util import get_args, parse_api_params, normalize_path
 from llmcli.help import print_help, INTERACTIVE_KEYS
 from llmcli.adapters import get_api_adapter, get_adapter_list
 from llmcli.message import Message
@@ -34,7 +34,7 @@ class LlmCli:
     api_adapter_name=None,
     api_adapter_options=None,
   ):
-    self.json_log_file = log_file_json
+    self.json_log_file = normalize_path(log_file_json) if log_file_json is not None else None
     self.interactive = interactive
     self.immediate = immediate
     self.separator = separator
@@ -81,6 +81,22 @@ class LlmCli:
 
     self.messages.append(message)
 
+  @staticmethod
+  def get_message_arg_content(arg_value: str) -> Tuple[str, str | None]:
+    if not arg_value.startswith('@'):
+      return (arg_value, None)
+    
+    if arg_value == '@-':
+      return (sys.stdin.read(), '-')
+    
+    filename = normalize_path(arg_value[1:])
+
+    if not os.path.exists(filename):
+      return (None, filename)
+
+    with open(filename, 'r') as f:
+      return (f.read(), filename)
+
   def add_messages_from_args(self, args: list[str]) -> None:
     """
     Add messages from the command line arguments. Works in parallel with argparse, parsing the already-validated
@@ -103,26 +119,31 @@ class LlmCli:
         continue
 
       arg_value = next(args_iter, None)
+      (arg_value_parsed, arg_value_parsed_filename) = self.get_message_arg_content(arg_value)
 
-      if arg in ('-s', '--system'):
-        args_messages.append(Message(role="system", content=arg_value))
-      elif arg in ('-a', '--assistant'):
-        args_messages.append(Message(role="assistant", content=arg_value))
-      elif arg in ('-u', '--user'):
-        args_messages.append(Message(role="user", content=arg_value))
-      elif arg in ('-f', '--file'):
-        args_messages.append(Message(role="user", file_path=arg_value))
-      elif arg in ('-i', '--image'):
-        args_messages.append(Message(role="user", image_path=arg_value))
-      elif arg in ('-c', '--conversation'):
+      if arg in ('-c', '--conversation'):
         # so you can combine -c and -j on a file that doesn't exist yet
-        if not os.path.exists(arg_value) and self.json_log_file == arg_value:
-          continue
+        if arg_value_parsed is None:
+          if arg_value_parsed_filename == self.json_log_file:
+            continue
+          else:
+            raise ValueError(f"File {arg_value_parsed_filename} does not exist")
 
-        with open(arg_value, 'r') as file:
-          conversation = json.load(file)
-          for message in conversation:
-            args_messages.append(Message.from_dict(message))
+        conversation = json.loads(arg_value_parsed)
+        for message in conversation:
+          args_messages.append(Message.from_dict(message))
+      elif arg_value_parsed is None and arg_value_parsed_filename is not None:
+        raise ValueError(f"File {arg_value_parsed_filename} does not exist")
+      elif arg in ('-s', '--system'):
+        args_messages.append(Message(role="system", content=arg_value_parsed))
+      elif arg in ('-a', '--assistant'):
+        args_messages.append(Message(role="assistant", content=arg_value_parsed))
+      elif arg in ('-u', '--user'):
+        args_messages.append(Message(role="user", content=arg_value_parsed))
+      elif arg in ('-f', '--file'):
+        args_messages.append(Message(role="user", file_path=arg_value_parsed))
+      elif arg in ('-i', '--image'):
+        args_messages.append(Message(role="user", image_path=arg_value_parsed))
 
     if not self.no_system_prompt and not any(message.role == "system" for message in args_messages):
       args_messages.insert(0, Message(role="system", content=DEFAULT_SYSTEM_PROMPT))
@@ -132,11 +153,11 @@ class LlmCli:
 
   def add_file(self) -> None:
     input = prompt('Enter file path: ')
-    self.add_chat_message(message=Message(role="user", file_path=os.path.expanduser(input)))
+    self.add_chat_message(message=Message(role="user", file_path=normalize_path(input)))
   
   def add_image(self) -> None:
     input = prompt('Enter image path: ')
-    self.add_chat_message(message=Message(role="user", image_path=os.path.expanduser(input)))
+    self.add_chat_message(message=Message(role="user", image_path=normalize_path(input)))
 
   def change_api_adapter_name(self) -> None:
     print('\nAvailable API Adapters:')
@@ -163,12 +184,15 @@ class LlmCli:
   def change_api_adapter_options(self) -> None:
     while True:
       print('\nAPI Adapter Options:')
-      print('[0] Return to previous menu')
       print('[1] Add an option')
+
       for i, option in enumerate(self.api_adapter_options):
         print(f'[{i+2}] Remove {option}')
 
       input = prompt('\nEnter selection: ')
+
+      if input == "":
+        break
 
       try:
         choice = int(input)
@@ -176,34 +200,29 @@ class LlmCli:
         print(f'Invalid selection: {input}')
         continue
     
-      if choice < 0 or choice > len(self.api_adapter_options) + 1:
-        print(f'Invalid selection: {choice}')
-        continue
-
-      if choice == 0:
-        self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
-        return
-      
-      if choice == 1:
+      if choice < 1 or choice > len(self.api_adapter_options) + 1:
+        print(f'Invalid selection: {input}')
+      elif choice == 1:
         input = prompt('\nEnter option (key=value): ')
         self.api_adapter_options.append(input)
       else:
         self.api_adapter_options.pop(choice - 2)
+        
+    self.api_adapter = get_api_adapter(self.api_adapter_name, parse_api_params(self.api_adapter_options))
 
   def change_json_log_file(self) -> None:
-    json_log_file = prompt('Enter JSON log file path: ')
+    json_log_file = prompt('Enter JSON log file path (leave blank to disable logging): ', default=self.json_log_file or '')
 
     if json_log_file.strip() == '':
-      json_log_file = None
+      self.json_log_file = None
     else:
-      self.json_log_file = os.path.expanduser(json_log_file)
+      self.json_log_file = normalize_path(json_log_file)
 
     self.log_json()
 
   def menu(self) -> None:
     while True:
       opts = [
-        ('Exit menu', lambda: None),
         ('Add a file', lambda: self.add_file()),
         ('Add an image', lambda: self.add_image()),
         ('Change API', lambda: self.change_api_adapter_name()),
@@ -213,22 +232,22 @@ class LlmCli:
 
       print('\nMenu:')
       for i, opt in enumerate(opts):
-        print(f'[{i}] {opt[0]}')
+        print(f'[{i+1}] {opt[0]}')
 
       input = prompt('\nEnter selection: ')
 
+      if input == '':
+        break
+
       try:
-        choice = int(input)
+        choice = int(input) - 1
       except ValueError:
         print(f'Invalid selection: {input}')
         continue
       
       if choice < 0 or choice >= len(opts):
-        print(f'Invalid selection: {choice}')
+        print(f'Invalid selection: {input}')
         continue
-
-      if choice == 0:
-        break
       
       try:
         opts[choice][1]()
