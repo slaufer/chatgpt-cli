@@ -1,4 +1,3 @@
-import os
 import json
 import base64
 
@@ -14,7 +13,7 @@ class Message:
       image_type=None,
       file_content=None,
       file_path=None,
-      adapter='none',
+      adapter=None,
       adapter_options=None,
       display_name=None,
       extra=None
@@ -27,7 +26,7 @@ class Message:
     self.image_path = image_path
     self.image_type = image_type
     self.adapter = adapter
-    self.adapter_options = adapter_options or {}
+    self.adapter_options = adapter_options
     self.display_name = display_name or role.capitalize()
     self.extra = extra
 

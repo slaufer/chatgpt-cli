@@ -55,4 +55,4 @@ def parse_api_params(params: list[str] = []) -> dict:
     ])
 
 def normalize_path(path: str) -> str:
-   return os.path.relpath(os.path.abspath(os.path.expanduser(path)), os.getcwd())
+   return os.path.relpath(os.path.normpath(os.path.abspath(os.path.realpath(os.path.expanduser(path)))), os.getcwd())

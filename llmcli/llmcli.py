@@ -1,7 +1,6 @@
 import os
 import sys
 import json
-import base64
 
 from shutil import get_terminal_size
 from typing import Iterable, Tuple, Union
@@ -49,13 +48,17 @@ class LlmCli:
 
   @staticmethod
   def encode(obj):
-    if isinstance(obj, Message):
+    if hasattr(obj, 'to_dict'):
       return obj.to_dict()
+    elif hasattr(obj, '__dict__'):
+      return obj.__dict__
+    elif hasattr(obj, '__iter__'):
+      return list(obj)
 
   def log_json(self):
     if self.json_log_file:
       with open(self.json_log_file, 'w') as file:
-          json.dump(self.messages, file, indent=4, default=self.encode)
+          json.dump(self.messages, file, indent=2, default=self.encode)
 
   def get_completion(self) -> Tuple[Union[Iterable[str], None], Message]:
     return self.api_adapter.get_completion(self.messages)

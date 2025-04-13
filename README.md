@@ -211,5 +211,7 @@ The README is well-structured, using Markdown with anchored sections and clear, 
 ```
 
 ## <a name="todo"></a> TODO
-- Image support for Ollama
-- Web search and annotations for OpenAI and (and Anthropic?)
+- Web search and annotations for OpenAI (and Anthropic?)
+  - Unclear how to implement this in a consistent and reliable way, may revisit later
+- Model stitching for multi-modal conversations
+  - Need to think on how to implement this, may also help with web search

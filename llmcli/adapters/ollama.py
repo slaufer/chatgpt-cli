@@ -45,9 +45,12 @@ class OllamaApiAdapter(BaseApiAdapter):
           "role": message.role,
           "content": f'### FILE: {message.file_path}\n\n```\n{message.file_content}\n```'
         })
-      elif message.image_content == 'image':
-        # TODO
-        pass
+      elif message.image_content is not None:
+        messages.append({
+          "role": message.role,
+          "content": f'### IMAGE: {message.image_path}',
+          "images": [message.image_content]
+        })
       else:
         messages.append({
           "role": message.role,
@@ -94,7 +97,6 @@ class OllamaApiAdapter(BaseApiAdapter):
 
     if self.config.get('min_p') is not None:
       options.min_p = float(self.config.get('min_p'))
-
 
     response_stream = ollama.chat(
       model=self.config.get('model'),

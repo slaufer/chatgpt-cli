@@ -4,7 +4,6 @@ import os
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
 from llmcli.message import Message
-from llmcli.util import get_mime_type
 
 
 class AnthropicApiAdapter(BaseApiAdapter):

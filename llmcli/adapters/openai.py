@@ -6,7 +6,6 @@ from openai.types.chat import ChatCompletionChunk
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
 from llmcli.message import Message
-from llmcli.util import get_mime_type
 
 
 class OpenAiApiAdapter(BaseApiAdapter):
@@ -49,7 +48,7 @@ class OpenAiApiAdapter(BaseApiAdapter):
       if message.file_content is not None:
         messages.append({
           "role": message.role,
-          "content": message.file_content,
+          "content": f'### FILE: {message.file_path}\n\n```\n{message.file_content}\n```',
         })
       elif message.image_content is not None:
         if max_tokens is None:
