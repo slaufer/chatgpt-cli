@@ -8,7 +8,8 @@ from typing import Iterable, Tuple, Union
 from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
-from llmcli.util import get_args, parse_api_params, normalize_path
+from llmcli.args import get_args
+from llmcli.util import parse_api_params, normalize_path
 from llmcli.help import print_help, INTERACTIVE_KEYS
 from llmcli.adapters import get_api_adapter, get_adapter_list
 from llmcli.message import Message
