@@ -268,7 +268,8 @@ class LlmCli:
 
       try:
         if user_input_type == 'text':
-          self.add_chat_message(message=Message(role="user", content=user_input), silent=True)
+          if user_input != '':
+            self.add_chat_message(message=Message(role="user", content=user_input), silent=True)
         elif user_input_type == 'menu':
           self.menu()
           default_input = user_input
