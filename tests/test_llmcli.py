@@ -7,48 +7,14 @@ from base64 import b64decode
 
 import json
 
-TEST_IMAGE = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=='
+from tests.fixtures.messages import get_test_messages, TEST_IMAGE
 
-def get_test_messages():
-  assistant_args = {
-    'adapter': 'ollama',
-    'adapter_options': {
-      'model': 'gemma3',
-      'temperature': 0.4,
-    },
-    'display_name': 'ollama / gemma3',
-  }
-
-  messages = [
-    Message(role='assistant', content='Hello, world!', **assistant_args),
-    Message(role='user', content='How are you?'),
-    Message(role='assistant', content='I am fine, thank you!', **assistant_args),
-    Message(
-      role='user',
-      content='### File: test.txt (contents hidden)',
-      file_path='test.txt',
-      file_content='i\'m a file =3'
-    ),
-    Message(role='user', content='What is this file?'),
-    Message(role='assistant', content='What a lovely file!', **assistant_args),
-    Message(
-      role='user',
-      content='### File: test.txt (contents hidden)',
-      image_path='test.png',
-      image_content=TEST_IMAGE,
-      image_type='image/png'
-    ),
-    Message(role='user', content='What is this image?'),
-    Message(role='assistant', content='What a lovely image!', **assistant_args),
-  ]
-
-  return messages
 
 def test_log_json():
   with patch('llmcli.llmcli.get_api_adapter'):
     cli = LlmCli(log_file_json='/dev/full')
 
-  messages = get_test_messages()
+  messages = get_test_messages(image=True, file=True)
 
   for message in messages:
     cli.add_chat_message(message=message, silent=True)
@@ -68,7 +34,7 @@ def test_get_completion():
   with patch('llmcli.llmcli.get_api_adapter'):
     cli = LlmCli()
 
-  messages = get_test_messages()
+  messages = get_test_messages(image=True, file=True)
 
   for message in messages:
     cli.add_chat_message(message=message, silent=True)
