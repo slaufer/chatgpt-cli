@@ -51,7 +51,7 @@ class Message:
           self.image_content = base64.b64encode(file.read()).decode('utf-8')
 
       if self.image_type is None:
-        self.image_type = get_mime_type(self.image_path)
+        self.image_type = get_mime_type(self.image_path) or 'image/jpeg'
 
       self.content = f'### Image: {self.image_path} ({self.image_type}) (contents hidden)'
 
@@ -69,3 +69,9 @@ class Message:
   def from_json(cls, json_str: str) -> "Message":
     data = json.loads(json_str)
     return cls.from_dict(data)
+  
+  def __eq__(self, other: "Message") -> bool:
+    if not isinstance(other, Message):
+      return False
+    
+    return self.__dict__ == other.__dict__
