@@ -1,12 +1,12 @@
-from typing import Any, Iterable, Tuple, Union
-from llmcli.message import Message
+from typing import Any, Callable, Iterable, Optional, Tuple
+from llmcli.messages.message import Message
 
 
 class BaseApiAdapter:
     NAME = "base"
     HR_NAME = "Base API Adapter"
     OPTIONS = []
-    config = {}
+    MASKED_OPTIONS = set()
 
     def __init__(self, params: dict) -> None:
         self.config = {}
@@ -19,7 +19,7 @@ class BaseApiAdapter:
 
     def get_completion(
         self, input_messages: list[Message]
-    ) -> Tuple[Union[Iterable[str], None], Message]:
+    ) -> Tuple[Iterable[str] | None, Message]:
         raise NotImplementedError("get_completion() must be implemented in a subclass")
 
     def get_display_name(self) -> str:
@@ -27,11 +27,35 @@ class BaseApiAdapter:
 
         if model is not None:
             return f"{self.HR_NAME} / {model}"
-        else:
-            return f"{self.HR_NAME}"
+
+        return f"{self.HR_NAME}"
+
+    def get_config(
+        self,
+        key: str,
+        cast: Optional[Callable[[str], Any]] = None,
+        default: Optional[Any] = None
+    ) -> Optional[Any]:
+        value = self.config.get(key)
+
+        if value is None:
+            return default
+
+        if cast is None:
+            return value
+
+        try:
+            return cast(value)
+        except (ValueError, TypeError, KeyError):
+            return default
+
+    def get_masked_config(self) -> dict[str, str]:
+        return {k: v for k, v in self.config.items() if k not in self.MASKED_OPTIONS}
 
 
+# pylint: disable=too-few-public-methods
 class ApiAdapterOption:
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         name: str,

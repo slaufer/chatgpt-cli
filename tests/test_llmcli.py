@@ -1,11 +1,15 @@
+import json
+
 from unittest.mock import call, mock_open, patch
-from llmcli.llmcli import LlmCli
-from llmcli.message import Message
 from random import randrange
 from os import terminal_size
 from base64 import b64decode
 
-import json
+from llmcli.llmcli import LlmCli
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
+from llmcli.messages import message_from_dict
 
 from tests.fixtures.messages import get_test_messages, TEST_IMAGE
 
@@ -24,7 +28,7 @@ def test_log_json():
 
     handle = mock_file()
     out_messages = [
-        Message.from_dict(m)
+        message_from_dict(m)
         for m in json.loads("".join([call.args[0] for call in handle.write.call_args_list]))
     ]
 
@@ -72,7 +76,6 @@ def test_get_message_arg_content():
     with patch("llmcli.llmcli.os.path.exists", return_value=True), patch(
         "builtins.open", mock_open(read_data="beep boop")
     ):
-
         assert LlmCli.get_message_arg_content("@baz.txt") == ("beep boop", "baz.txt")
 
 
@@ -82,46 +85,45 @@ actual_open = open
 def mock_open_side_effect(file, *args, **kwargs):
     if file == "file.txt":
         return mock_open(read_data="beep boop").return_value
-    elif file == "image.png":
+    
+    if file == "image.png":
         m = mock_open()
         m.return_value.read.return_value = b64decode(TEST_IMAGE)
         return m.return_value
-    else:
-        return actual_open(file, *args, **kwargs)
+    
+    if file == "log.json":
+        m = mock_open()
+        m.return_value.read.return_value = "[{\"message_type\":\"Message\",\"role\":\"assista" + \
+            "nt\",\"content\":\"this is a text message\"},{\"message_type\":\"FileMessage\"," + \
+            "\"role\":\"user\",\"content\":\"### File: file.txt\",\"file_path\":\"file.txt\"," +\
+            "\"file_content\":\"beep boop\"}]"
+
+        return m.return_value
+    
+    return actual_open(file, *args, **kwargs)
 
 
 def test_add_messages_from_args():
+    # TODO: test -c
+    # TODO: break this test up
     with patch("llmcli.llmcli.get_api_adapter"):
         cli = LlmCli(interactive=False)
 
     with patch("llmcli.llmcli.os.path.exists", return_value=True), patch(
         "builtins.open"
-    ) as mock_open:
-
-        mock_open.side_effect = mock_open_side_effect
+    ) as mocked_open:
+        mocked_open.side_effect = mock_open_side_effect
 
         cli.add_messages_from_args(
             args=[
-                "-s",
-                "you are a jelly donut",
-                "-n",
-                "-q",
-                "-u",
-                "what are you?",
-                "-p",
-                "ollama",
-                "-a",
-                "i am a jelly donut",
-                "-u",
-                "@file.txt",
-                "-x",
-                " =3 =3 =3 ",
-                "-a",
-                "@file.txt",
-                "-f",
-                "file.txt",
-                "-i",
-                "image.png",
+                "-s", "you are a jelly donut",
+                "-u", "what are you?",
+                "-a", "i am a jelly donut",
+                "-u", "@file.txt",
+                "-a", "@file.txt",
+                "-f", "file.txt",
+                "-i", "image.png",
+                "-c", "@log.json",
             ]
         )
 
@@ -131,11 +133,18 @@ def test_add_messages_from_args():
         Message(role="assistant", content="i am a jelly donut"),
         Message(role="user", content="beep boop"),
         Message(role="assistant", content="beep boop"),
-        Message(role="user", file_path="file.txt", file_content="beep boop"),
-        Message(
+        FileMessage(role="user", file_path="file.txt", file_content="beep boop"),
+        ImageMessage(
             role="user",
             image_path="image.png",
             image_content=TEST_IMAGE,
             image_type="image/png",
+        ),
+        Message(role="assistant", content="this is a text message"),
+        FileMessage(
+            role="user",
+            file_content="beep boop",
+            file_path="file.txt",
+            content="### File: file.txt"
         ),
     ]

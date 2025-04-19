@@ -5,6 +5,12 @@ from llmcli.adapters.openai import OpenAiApiAdapter
 from llmcli.adapters.anthropic import AnthropicApiAdapter
 from llmcli.adapters.ollama import OllamaApiAdapter
 
+__all__ = [
+    "BaseApiAdapter",
+    "OpenAiApiAdapter",
+    "AnthropicApiAdapter",
+    "OllamaApiAdapter",
+]
 
 def get_adapter_list() -> list[BaseApiAdapter]:
     return [
@@ -25,7 +31,7 @@ def get_api_adapter(name: str, params: dict) -> BaseApiAdapter:
         return adapter_instance
 
     for adapter in get_adapter_list():
-        if adapter.NAME == name or adapter.HR_NAME == name:
+        if name in (adapter.NAME, adapter.HR_NAME):
             adapter_instance = adapter(params)
             ADAPTER_INSTANCE_CACHE[(name, params_str)] = adapter_instance
             return adapter_instance

@@ -1,13 +1,18 @@
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Tuple
 import ollama
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
-from llmcli.message import Message
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
 
 
 class OllamaApiAdapter(BaseApiAdapter):
     NAME = "ollama"
     HR_NAME = "Ollama"
+    EXTRA_HELP = "By default, uses an Ollama instance running on localhost. For remote " + \
+        "instances, set the OLLAMA_HOST environment variable."
+    MASKED_OPTIONS = set()
     OPTIONS = [
         ApiAdapterOption(
             name="model",
@@ -74,7 +79,6 @@ class OllamaApiAdapter(BaseApiAdapter):
               "Controls diversity via nucleus sampling; higher values yield more diverse text.",
         ),
     ]
-    EXTRA_HELP = "By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable."
 
     @staticmethod
     def output_stream(response_stream: Iterable[dict], response_message: Message) -> Iterable[str]:
@@ -85,18 +89,19 @@ class OllamaApiAdapter(BaseApiAdapter):
 
     def get_completion(
         self, input_messages: list[Message]
-    ) -> Tuple[Union[Iterable[str], None], Message]:
+    ) -> Tuple[Iterable[str] | None, Message]:
         messages = []
 
         for message in input_messages:
-            if message.file_content is not None:
+            if isinstance(message, FileMessage):
                 messages.append(
                     {
                         "role": message.role,
-                        "content": f"### FILE: {message.file_path}\n\n```\n{message.file_content}\n```",
+                        "content": f"### FILE: {message.file_path}\n\n" + \
+                            f"```\n{message.file_content}\n```",
                     }
                 )
-            elif message.image_content is not None:
+            elif isinstance(message, ImageMessage):
                 messages.append(
                     {
                         "role": message.role,
@@ -107,43 +112,22 @@ class OllamaApiAdapter(BaseApiAdapter):
             else:
                 messages.append({"role": message.role, "content": message.content})
 
-        options = ollama.Options()
-
-        if self.config.get("mirostat") is not None:
-            options.mirostat = int(self.config.get("mirostat"))
-
-        if self.config.get("mirostat_eta") is not None:
-            options.mirostat_eta = float(self.config.get("mirostat_eta"))
-
-        if self.config.get("mirostat_tau") is not None:
-            options.mirostat_tau = float(self.config.get("mirostat_tau"))
-
-        if self.config.get("num_ctx") is not None:
-            options.num_ctx = int(self.config.get("num_ctx"))
-
-        if self.config.get("repeat_last_n") is not None:
-            options.repeat_last_n = int(self.config.get("repeat_last_n"))
-
-        if self.config.get("repeat_penalty") is not None:
-            options.repeat_penalty = float(self.config.get("repeat_penalty"))
-
-        if self.config.get("temperature") is not None:
-            options.temperature = float(self.config.get("temperature"))
-
-        if self.config.get("seed") is not None:
-            options.seed = int(self.config.get("seed"))
-
-        if self.config.get("num_predict") is not None:
-            options.num_predict = int(self.config.get("num_predict"))
-
-        if self.config.get("top_k") is not None:
-            options.top_k = int(self.config.get("top_k"))
-
-        if self.config.get("top_p") is not None:
-            options.top_p = float(self.config.get("top_p"))
+        options = ollama.Options(
+            mirostat=self.get_config('mirostat', cast=int),
+            mirostat_eta=self.get_config('mirostat_eta', cast=float),
+            mirostat_tau=self.get_config('mirostat_tau', cast=float),
+            num_ctx=self.get_config('num_ctx', cast=int),
+            repeat_last_n=self.get_config('repeat_last_n', cast=int),
+            repeat_penalty=self.get_config('repeat_penalty', cast=float),
+            temperature=self.get_config('temperature', cast=float),
+            seed=self.get_config('seed', cast=int),
+            num_predict=self.get_config('num_predict', cast=int),
+            top_k=self.get_config('top_k', cast=int),
+            top_p=self.get_config('top_p', cast=float),
+        )
 
         response_stream = ollama.chat(
-            model=self.config.get("model"),
+            model=self.get_config('model'),
             messages=messages,
             options=options,
             stream=True,
@@ -153,7 +137,7 @@ class OllamaApiAdapter(BaseApiAdapter):
             role="assistant",
             content="",
             adapter=self.NAME,
-            adapter_options={k: v for k, v in self.config.items() if v is not None},
+            adapter_options=self.get_masked_config(),
             display_name=self.get_display_name(),
         )
 

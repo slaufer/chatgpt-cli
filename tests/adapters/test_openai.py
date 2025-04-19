@@ -5,6 +5,8 @@ import re
 from llmcli.adapters.openai import OpenAiApiAdapter
 from tests.fixtures.messages import get_test_messages
 
+from openai import NOT_GIVEN
+
 
 def mock_response_stream(response_str):
     for token in re.split(r"(\s+)", response_str):
@@ -58,6 +60,7 @@ def test_openai_api_adapter_text_only():
         ],
         model="chatgpt-4o-latest",
         stream=True,
+        max_tokens=NOT_GIVEN,
         temperature=1.313,
         top_p=0.49,
         frequency_penalty=-1.1,
@@ -113,6 +116,7 @@ def test_openai_api_adapter_file():
         ],
         model="chatgpt-4o-latest",
         stream=True,
+        max_tokens=NOT_GIVEN,
         temperature=1.313,
         top_p=0.49,
         frequency_penalty=-1.1,

@@ -1,16 +1,21 @@
 import os
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Tuple
 
 from openai import OpenAI, Stream
 from openai.types.chat import ChatCompletionChunk
+from openai import NOT_GIVEN
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
-from llmcli.message import Message
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
 
 
 class OpenAiApiAdapter(BaseApiAdapter):
     NAME = "openai"
     HR_NAME = "OpenAI"
+    EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
+    MASKED_OPTIONS = ["api_key"]
     OPTIONS = [
         ApiAdapterOption(
             name="model",
@@ -28,7 +33,8 @@ class OpenAiApiAdapter(BaseApiAdapter):
         ApiAdapterOption(
             name="max_tokens",
             hr_name="Max Tokens",
-            description="The maximum number of tokens that can be generated in the chat completion.",
+            description="The maximum number of tokens that can be " + \
+                "generated in the chat completion.",
         ),
         ApiAdapterOption(
             name="temperature",
@@ -43,22 +49,23 @@ class OpenAiApiAdapter(BaseApiAdapter):
         ApiAdapterOption(
             name="frequency_penalty",
             hr_name="Frequency Penalty",
-            description="Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far.",
+            description="Number between -2.0 and 2.0. Positive values penalize new tokens " + \
+                "based on their existing frequency in the text so far.",
         ),
         ApiAdapterOption(
             name="presence_penalty",
             hr_name="Presence Penalty",
-            description="Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far.",
+            description="Number between -2.0 and 2.0. Positive values penalize new tokens " + \
+                "based on whether they appear in the text so far.",
         ),
     ]
-    EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
 
     # used when an image message is submitted without a MAX_TOKENS setting
     SAFE_MAX_TOKENS = 1000
 
     def __init__(self, params):
         super().__init__(params)
-        self.client = OpenAI(api_key=self.config.get("api_key"))
+        self.client = OpenAI(api_key=self.get_config('api_key'))
 
     @staticmethod
     def output_stream(
@@ -75,19 +82,20 @@ class OpenAiApiAdapter(BaseApiAdapter):
 
     def get_completion(
         self, input_messages: list[Message]
-    ) -> Tuple[Union[Iterable[str], None], Message]:
+    ) -> Tuple[Iterable[str] | None, Message]:
         messages = []
-        max_tokens = self.config.get("max_tokens")
+        max_tokens = self.get_config('max_tokens', cast=int)
 
         for message in input_messages:
-            if message.file_content is not None:
+            if isinstance(message, FileMessage):
                 messages.append(
                     {
                         "role": message.role,
-                        "content": f"### FILE: {message.file_path}\n\n```\n{message.file_content}\n```",
+                        "content": f"### FILE: {message.file_path}\n\n" + \
+                            f"```\n{message.file_content}\n```",
                     }
                 )
-            elif message.image_content is not None:
+            elif isinstance(message, ImageMessage):
                 if max_tokens is None:
                     max_tokens = self.SAFE_MAX_TOKENS
 
@@ -119,36 +127,22 @@ class OpenAiApiAdapter(BaseApiAdapter):
                     }
                 )
 
-        req = {
-            "messages": messages,
-            "model": self.config.get("model"),
-            "stream": True,
-        }
-
-        if max_tokens is not None:
-            req["max_tokens"] = int(max_tokens)
-
-        if self.config.get("temperature") is not None:
-            req["temperature"] = float(self.config.get("temperature"))
-
-        if self.config.get("top_p") is not None:
-            req["top_p"] = float(self.config.get("top_p"))
-
-        if self.config.get("frequency_penalty") is not None:
-            req["frequency_penalty"] = float(self.config.get("frequency_penalty"))
-
-        if self.config.get("presence_penalty") is not None:
-            req["presence_penalty"] = float(self.config.get("presence_penalty"))
-
-        response_stream = self.client.chat.completions.create(**req)
+        response_stream = self.client.chat.completions.create(
+            messages=messages,
+            model=self.get_config('model'),
+            stream=True,
+            max_tokens=max_tokens or NOT_GIVEN,
+            temperature=self.get_config('temperature', cast=float, default=NOT_GIVEN),
+            top_p=self.get_config('top_p', cast=float, default=NOT_GIVEN),
+            frequency_penalty=self.get_config('frequency_penalty', cast=float, default=NOT_GIVEN),
+            presence_penalty=self.get_config('presence_penalty', cast=float, default=NOT_GIVEN),
+        )
 
         response_message = Message(
             role="assistant",
             content="",
             adapter=self.NAME,
-            adapter_options={
-                k: v for k, v in self.config.items() if k != "api_key" and v is not None
-            },
+            adapter_options=self.get_masked_config,
             display_name=self.get_display_name(),
         )
 

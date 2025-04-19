@@ -1,24 +1,26 @@
 import json
 from unittest.mock import patch, mock_open
 from base64 import b64encode
-from llmcli.message import Message
-
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
+from llmcli.messages import message_from_dict
 
 def test_load_files():
     with patch("builtins.open", mock_open(read_data="file content")), patch(
         "llmcli.util.os.getcwd", return_value="/home/user"
     ):
 
-        file_message = Message(file_path="test.txt")
+        file_message = FileMessage(file_path="test.txt")
         assert file_message.file_content == "file content"
         assert file_message.file_path == "test.txt"
         assert file_message.content == "### File: test.txt (contents hidden)"
 
     with patch("builtins.open", mock_open(read_data=b"image content")), patch(
         "llmcli.util.os.getcwd", return_value="/home/user"
-    ), patch("llmcli.message.get_mime_type", return_value="image/png"):
+    ), patch("llmcli.messages.image_message.get_mime_type", return_value="image/png"):
 
-        image_message = Message(image_path="/path/to/image.png")
+        image_message = ImageMessage(image_path="/path/to/image.png")
         assert image_message.image_type == "image/png"
         assert image_message.image_path == "../../path/to/image.png"
         assert image_message.image_content == b64encode(b"image content").decode("utf-8")
@@ -30,6 +32,7 @@ def test_load_files():
 
 def test_from_to_dict():
     message_dict = {
+        "message_type": "Message",
         "role": "assistant",
         "content": "Hello, world!",
         "adapter": "openai",
@@ -47,6 +50,7 @@ def test_from_to_dict():
 def test_from_to_json():
     message_json = json.dumps(
         {
+            "message_type": "Message",
             "role": "assistant",
             "content": "Hello, world!",
             "adapter": "openai",
@@ -60,3 +64,8 @@ def test_from_to_json():
     )
 
     assert Message.from_json(message_json).to_json() == message_json
+
+def test_message_from_dict():
+    assert isinstance(message_from_dict({ 'message_type': "Message" }), Message)
+    assert isinstance(message_from_dict({ 'message_type': "FileMessage" }), FileMessage)
+    assert isinstance(message_from_dict({ 'message_type': "ImageMessage" }), ImageMessage)

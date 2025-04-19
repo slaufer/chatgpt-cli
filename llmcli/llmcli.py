@@ -12,7 +12,10 @@ from llmcli.args import get_args
 from llmcli.util import parse_api_params, normalize_path
 from llmcli.help import print_help, INTERACTIVE_KEYS
 from llmcli.adapters import get_api_adapter, get_adapter_list
-from llmcli.message import Message
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
+from llmcli.messages import message_from_dict
 
 DEFAULT_SYSTEM_PROMPT = """
 Carefully heed the user's instructions.
@@ -148,12 +151,12 @@ class LlmCli:
                 if arg_value_parsed is None:
                     if arg_value_parsed_filename == self.json_log_file:
                         continue
-                    
+
                     raise ValueError(f"File {arg_value_parsed_filename} does not exist")
 
                 conversation = json.loads(arg_value_parsed)
                 for message in conversation:
-                    args_messages.append(Message.from_dict(message))
+                    args_messages.append(message_from_dict(message))
             elif arg_value_parsed is None and arg_value_parsed_filename is not None:
                 raise ValueError(f"File {arg_value_parsed_filename} does not exist")
             elif arg in ("-s", "--system"):
@@ -163,9 +166,9 @@ class LlmCli:
             elif arg in ("-u", "--user"):
                 args_messages.append(Message(role="user", content=arg_value_parsed))
             elif arg in ("-f", "--file"):
-                args_messages.append(Message(role="user", file_path=arg_value_parsed))
+                args_messages.append(FileMessage(role="user", file_path=arg_value_parsed))
             elif arg in ("-i", "--image"):
-                args_messages.append(Message(role="user", image_path=arg_value_parsed))
+                args_messages.append(ImageMessage(role="user", image_path=arg_value_parsed))
 
         if not self.no_system_prompt and not any(
             message.role == "system" for message in args_messages

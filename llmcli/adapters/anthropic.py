@@ -1,15 +1,22 @@
 import os
 
-from typing import Iterable, Tuple, Union
+from typing import Iterable, Tuple
 import anthropic
+from anthropic import NOT_GIVEN
 
 from llmcli.adapters.base import BaseApiAdapter, ApiAdapterOption
-from llmcli.message import Message
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
 
 
 class AnthropicApiAdapter(BaseApiAdapter):
     NAME = "anthropic"
     HR_NAME = "Anthropic"
+    EXTRA_HELP = (
+        "By default, uses the Anthropic API key from the environment variable ANTHROPIC_API_KEY."
+    )
+    MASKED_OPTIONS = set("api_key")
     OPTIONS = [
         ApiAdapterOption(
             name="model",
@@ -41,13 +48,10 @@ class AnthropicApiAdapter(BaseApiAdapter):
             description="An alternative to sampling with temperature, called nucleus sampling.",
         ),
     ]
-    EXTRA_HELP = (
-        "By default, uses the Anthropic API key from the environment variable ANTHROPIC_API_KEY."
-    )
 
     def __init__(self, params):
         super().__init__(params)
-        self.client = anthropic.Anthropic(api_key=self.config.get("api_key"))
+        self.client = anthropic.Anthropic(api_key=self.get_config('api_key'))
         self.system = None
 
     @staticmethod
@@ -64,7 +68,7 @@ class AnthropicApiAdapter(BaseApiAdapter):
 
     def get_completion(
         self, input_messages: list[Message]
-    ) -> Tuple[Union[Iterable[str], None], Message]:
+    ) -> Tuple[Iterable[str] | None, Message]:
         messages = []
 
         for message in input_messages:
@@ -72,17 +76,18 @@ class AnthropicApiAdapter(BaseApiAdapter):
                 self.system = message.content
                 continue
 
-            if message.file_content is not None:
+            if isinstance(message, FileMessage):
                 out_message = {
                     "role": message.role,
                     "content": [
                         {
                             "type": "text",
-                            "text": f"### FILE: {message.file_path}\n\n```\n{message.file_content}\n```",
+                            "text": f"### FILE: {message.file_path}\n\n" + \
+                                f"```\n{message.file_content}\n```",
                         }
                     ],
                 }
-            elif message.image_content is not None:
+            elif isinstance(message, ImageMessage):
                 out_message = {
                     "role": message.role,
                     "content": [
@@ -112,32 +117,21 @@ class AnthropicApiAdapter(BaseApiAdapter):
             else:
                 messages.append(out_message)
 
-        req = {}
-
-        if self.config.get("temperature") is not None:
-            req["temperature"] = float(self.config.get("temperature"))
-
-        if self.config.get("top_p") is not None:
-            req["top_p"] = float(self.config.get("top_p"))
-
-        if self.system is not None:
-            req["system"] = self.system
-
         response_stream = self.client.messages.create(
-            max_tokens=int(self.config.get("max_tokens")),
-            model=self.config.get("model"),
+            max_tokens=self.get_config('max_tokens', cast=int),
+            model=self.get_config('model'),
             messages=messages,
             stream=True,
-            **req,
+            temperature=self.get_config('temperature', cast=float, default=NOT_GIVEN),
+            top_p=self.get_config('top_p', cast=float, default=NOT_GIVEN),
+            system=self.system or NOT_GIVEN,
         )
 
         response_message = Message(
             role="assistant",
             content="",
             adapter=self.NAME,
-            adapter_options={
-                k: v for k, v in self.config.items() if k != "api_key" and v is not None
-            },
+            adapter_options=self.get_masked_config(),
             display_name=self.get_display_name(),
         )
 

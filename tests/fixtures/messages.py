@@ -1,4 +1,6 @@
-from llmcli.message import Message
+from llmcli.messages.message import Message
+from llmcli.messages.file_message import FileMessage
+from llmcli.messages.image_message import ImageMessage
 
 TEST_IMAGE = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=="
@@ -31,7 +33,7 @@ def get_test_messages_text():
 
 def get_test_messages_file():
     return [
-        Message(
+        FileMessage(
             role="user",
             content="### File: test.txt (contents hidden)",
             file_path="test.txt",
@@ -44,9 +46,9 @@ def get_test_messages_file():
 
 def get_test_messages_image():
     return [
-        Message(
+        ImageMessage(
             role="user",
-            content="### File: test.txt (contents hidden)",
+            content="### Image: test.png (contents hidden)",
             image_path="test.png",
             image_content=TEST_IMAGE,
             image_type="image/png",
