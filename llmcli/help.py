@@ -1,14 +1,23 @@
+# pylint: disable=line-too-long
+"""
+This module contains the help message.
+"""
 import os
 import sys
 
 from llmcli.adapters import get_adapter_list
 
-INTERACTIVE_KEYS = 'Press Alt+Enter to submit; Ctrl+B to show the menu; Ctrl+C or Ctrl+D to exit.'
+INTERACTIVE_KEYS = "Press Alt+Enter to submit; Ctrl+B to show the menu; Ctrl+C or Ctrl+D to exit."
+
 
 def print_help():
-  exec_path = os.path.basename(sys.argv[0])
-  
-  print(f"""
+    """
+    Print the help message.
+    """
+    exec_path = os.path.basename(sys.argv[0])
+
+    print(
+        f"""
 LLM CLI
 
 This command line interface allows you to interact with OpenAI and Anthropic's chat completion APIs in various ways, including sending system prompts, assistant responses, user prompts, and loading previous conversations. It supports both interactive and non-interactive modes.
@@ -47,22 +56,27 @@ Options:
   TIP: Try `{exec_path} -c '@mylog.json' -j mylog.json` to persist conversations between sessions.
 
   ADAPTERS:
-""".strip())
-  
-  for adapter in get_adapter_list():
-    print(f"    {adapter.HR_NAME} ({adapter.NAME})")
-    print(f"      OPTIONS:")
+""".strip()
+    )
 
-    for option in adapter.OPTIONS:
-      if option.default_help_override is not None:
-        print(f"      - {option.name : <22} {option.description} (default: {option.default_help_override})")
-      elif option.default is not None:
-        print(f"      - {option.name : <22} {option.description} (default: {option.default})")
-      else:
-        print(f"      - {option.name : <22} {option.description}")
+    for adapter in get_adapter_list():
+        print(f"    {adapter.HR_NAME} ({adapter.NAME})")
+        print("      OPTIONS:")
 
-    print("")
+        for option in adapter.OPTIONS:
+            if option.default_help_override is not None:
+                print(
+                    f"      - {option.name : <22} {option.description} (default: {option.default_help_override})"
+                )
+            elif option.default is not None:
+                print(
+                    f"      - {option.name : <22} {option.description} (default: {option.default})"
+                )
+            else:
+                print(f"      - {option.name : <22} {option.description}")
 
-    if adapter.EXTRA_HELP is not None:
-      print(f"      {adapter.EXTRA_HELP}")
-      print("")
+        print("")
+
+        if adapter.EXTRA_HELP is not None:
+            print(f"      {adapter.EXTRA_HELP}")
+            print("")
