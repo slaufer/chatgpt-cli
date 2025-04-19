@@ -19,6 +19,7 @@ def get_test_messages_text():
   return [
     Message(role='assistant', content='Hello, world!', **get_assistant_args()),
     Message(role='user', content='How are you?'),
+    Message(role='user', content='You are how?'),
     Message(role='assistant', content='I am fine, thank you!', **get_assistant_args()),
   ]
 

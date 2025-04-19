@@ -1,16 +1,13 @@
 from unittest.mock import MagicMock, patch
 
 import re
-from random import random, choice
 
 from llmcli.adapters.openai import OpenAiApiAdapter
 from tests.fixtures.messages import get_test_messages
 
 def mock_response_stream(str):
   for token in re.split(r'(\s+)', str):
-    chunk = MagicMock()
-    chunk.choices = [MagicMock(delta=MagicMock(content=token))]
-    yield chunk
+    yield MagicMock(choices=[MagicMock(delta=MagicMock(content=token))])
 
 def get_adapter_with_mock_client(params, response_str):
   with patch('llmcli.adapters.openai.OpenAI') as mock_OpenAI:
@@ -20,12 +17,12 @@ def get_adapter_with_mock_client(params, response_str):
 
 def get_sanity_checked_adapter(messages):
   test_params = {
-    'api_key': 'test-key',
-    'model': choice(['gpt-4o', 'chatgpt-4o-latest', 'o3', 'gpt-4.1-mini']),
-    'temperature': str(random() * 2),
-    'top_p': str(random()),
-    'frequency_penalty': str(random() * 4 - 2),
-    'presence_penalty': str(random() * 4 - 2),
+    'api_key': 'sk-abcdefghijklmnopqrstuvwxyz1234567890abcdef',
+    'model': 'chatgpt-4o-latest',
+    'temperature': '1.313',
+    'top_p': '0.49',
+    'frequency_penalty': '-1.1',
+    'presence_penalty': '-0.998',
   }
   test_message = "this is a test"
   adapter, mock_OpenAI = get_adapter_with_mock_client(test_params, test_message)
@@ -39,64 +36,74 @@ def get_sanity_checked_adapter(messages):
 
   mock_OpenAI.call_args.assert_called_with(api_key=test_params['api_key'])
 
-  return adapter, {
-    'model': test_params['model'],
-    'temperature': float(test_params['temperature']),
-    'top_p': float(test_params['top_p']),
-    'frequency_penalty': float(test_params['frequency_penalty']),
-    'presence_penalty': float(test_params['presence_penalty']),
-  }
+  return adapter
 
 def test_openai_api_adapter_text_only():
   messages = get_test_messages()
-  adapter, call_params = get_sanity_checked_adapter(messages)
+  adapter = get_sanity_checked_adapter(messages)
 
   adapter.client.chat.completions.create.assert_called_with(
-    messages=[{'role': m.role, 'content': m.content} for m in messages],
+    messages=[
+      {'role': 'system', 'content': 'You are an assistant.'},
+      {'role': 'assistant', 'content': 'Hello, world!'},
+      {'role': 'user', 'content': 'How are you?'},
+      {'role': 'user', 'content': 'You are how?'},
+      {'role': 'assistant', 'content': 'I am fine, thank you!'}
+    ],
+    model='chatgpt-4o-latest',
     stream=True,
-    **call_params,
+    temperature=1.313,
+    top_p=0.49,
+    frequency_penalty=-1.1,
+    presence_penalty=-0.998,
   )
 
 def test_openai_api_adapter_image():
   messages = get_test_messages(text=False, image=True)
-  adapter, call_params = get_sanity_checked_adapter(messages)
+  adapter = get_sanity_checked_adapter(messages)
 
   adapter.client.chat.completions.create.assert_called_with(
     messages=[
+      {'role': 'system', 'content': 'You are an assistant.'},
       {
-        'role': m.role,
+        'role': 'user',
         'content': [
-          { 'type': 'text', 'text': f'### IMAGE: {m.image_path}' },
+          {'type': 'text', 'text': '### IMAGE: test.png'},
           {
             'type': 'image_url',
             'image_url': {
-              'url': f'data:{m.image_type};base64,{m.image_content}',
+              'url': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAACklEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg=='
             }
           }
         ]
-      } if m.image_content is not None else {
-        'role': m.role,
-        'content': m.content,
-      }
-      for m in messages
+      },
+      {'role': 'user', 'content': 'What is this image?'},
+      {'role': 'assistant', 'content': 'What a lovely image!'}
     ],
-    max_tokens=OpenAiApiAdapter.SAFE_MAX_TOKENS,
+    model='chatgpt-4o-latest',
     stream=True,
-    **call_params,
+    max_tokens=1000,
+    temperature=1.313,
+    top_p=0.49,
+    frequency_penalty=-1.1,
+    presence_penalty=-0.998,
   )
 
 def test_openai_api_adapter_file():
   messages = get_test_messages(text=False, file=True)
-  adapter, call_params  = get_sanity_checked_adapter(messages)
+  adapter = get_sanity_checked_adapter(messages)
 
   adapter.client.chat.completions.create.assert_called_with(
     messages=[
-      {
-        'role': m.role,
-        'content': f'### FILE: {m.file_path}\n\n```\n{m.file_content}\n```' if m.file_content is not None else m.content,
-      }
-      for m in messages
+      {'role': 'system', 'content': 'You are an assistant.'},
+      {'role': 'user', 'content': "### FILE: test.txt\n\n```\ni'm a file =3\n```"},
+      {'role': 'user', 'content': 'What is this file?'},
+      {'role': 'assistant', 'content': 'What a lovely file!'}
     ],
+    model='chatgpt-4o-latest',
     stream=True,
-    **call_params,
+    temperature=1.313,
+    top_p=0.49,
+    frequency_penalty=-1.1,
+    presence_penalty=-0.998
   )
