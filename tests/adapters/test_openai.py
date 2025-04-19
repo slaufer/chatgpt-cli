@@ -5,8 +5,8 @@ import re
 from llmcli.adapters.openai import OpenAiApiAdapter
 from tests.fixtures.messages import get_test_messages
 
-def mock_response_stream(str):
-  for token in re.split(r'(\s+)', str):
+def mock_response_stream(response_str):
+  for token in re.split(r'(\s+)', response_str):
     yield MagicMock(choices=[MagicMock(delta=MagicMock(content=token))])
 
 def get_adapter_with_mock_client(params, response_str):

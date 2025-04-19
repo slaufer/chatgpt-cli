@@ -6,8 +6,8 @@ import re
 from llmcli.adapters.anthropic import AnthropicApiAdapter
 from tests.fixtures.messages import get_test_messages
 
-def mock_response_stream(str):
-  for token in re.split(r'(\s+)', str):
+def mock_response_stream(response_str):
+  for token in re.split(r'(\s+)', response_str):
     yield MagicMock(type='content_block_delta', delta=MagicMock(type='text_delta', text=token))
 
 def get_adapter_with_mock_client(params, response_str):

@@ -18,11 +18,9 @@ class OllamaApiAdapter(BaseApiAdapter):
     ApiAdapterOption(name='repeat_penalty', hr_name='Repeat Penalty', description='Sets how strongly to penalize repetitions.'),
     ApiAdapterOption(name='temperature', hr_name='Temperature', description='The temperature of the model; higher values increase creativity.'),
     ApiAdapterOption(name='seed', hr_name='Seed', description='Sets the random number seed to use for generation.'),
-    ApiAdapterOption(name='stop', hr_name='Stop Sequence', description='Sets the stop sequences to use; generation stops when encountered.'),
     ApiAdapterOption(name='num_predict', hr_name='Max Tokens', description='Maximum number of tokens to predict when generating text.'),
     ApiAdapterOption(name='top_k', hr_name='Top-K', description='Reduces the probability of generating nonsense by limiting token selection.'),
     ApiAdapterOption(name='top_p', hr_name='Top-P', description='Controls diversity via nucleus sampling; higher values yield more diverse text.'),
-    ApiAdapterOption(name='min_p', hr_name='Min-P', description='Ensures a minimum probability threshold for token selection.'),    
   ]
   EXTRA_HELP = "By default, uses an Ollama instance running on localhost. For remote instances, set the OLLAMA_HOST environment variable."
 
@@ -83,9 +81,6 @@ class OllamaApiAdapter(BaseApiAdapter):
     if self.config.get('seed') is not None:
       options.seed = int(self.config.get('seed'))
 
-    if self.config.get('stop') is not None:
-      options.stop = str(self.config.get('stop'))
-
     if self.config.get('num_predict') is not None:
       options.num_predict = int(self.config.get('num_predict'))
 
@@ -94,9 +89,6 @@ class OllamaApiAdapter(BaseApiAdapter):
 
     if self.config.get('top_p') is not None:
       options.top_p = float(self.config.get('top_p'))
-
-    if self.config.get('min_p') is not None:
-      options.min_p = float(self.config.get('min_p'))
 
     response_stream = ollama.chat(
       model=self.config.get('model'),
