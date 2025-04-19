@@ -109,7 +109,7 @@ class OllamaApiAdapter(BaseApiAdapter):
       role="assistant",
       content='',
       adapter=self.NAME,
-      adapter_options=self.config,
+      adapter_options={k: v for k, v in self.config.items() if v is not None},
       display_name=self.get_display_name(),
     )
 
