@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock, patch
+from random import random, choice
 
 import re
 
@@ -39,7 +40,12 @@ def get_sanity_checked_adapter(messages):
 def test_anthropic_api_adapter_text_only():
   messages = get_test_messages()
   adapter = get_sanity_checked_adapter(messages)
-test-key
+
+  adapter.client.messages.create.assert_called_with(
+    max_tokens=1000,
+    model='claude-3-7-sonnet-latest',
+    temperature=1.7,
+    top_p=0.9,
     system='You are an assistant.',
     messages=[
       {'role': 'assistant', 'content': [{'type': 'text', 'text': 'Hello, world!'}]},
