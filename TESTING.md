@@ -11,6 +11,9 @@ python -m venv venv
 
 # do this to run the tests
 pip install .[test] && pytest
+
+# and run the linter
+pylint llmcli
 ```
 
 **NOTE:** Many of the tests are using UNIX-style file paths, and may or may not work in Windows.

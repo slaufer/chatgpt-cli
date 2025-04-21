@@ -1,8 +1,20 @@
+"""
+Contains the `get_args` function, which is used to parse command-line arguments.
+"""
+
 import argparse
 from llmcli.adapters import get_adapter_list
 
 
 def get_args() -> argparse.Namespace:
+    """
+    Parse command-line arguments.
+
+    Returns
+    -------
+    argparse.Namespace
+        The parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(
         description="ChatGPT CLI",
         add_help=False,

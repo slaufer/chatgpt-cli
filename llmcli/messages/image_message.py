@@ -1,8 +1,28 @@
+"""
+Module for handling image-based messages in a conversation.
+
+This module defines the `ImageMessage` class, which represents a message containing
+image content. It provides functionality to load image content, encode it in base64,
+and manage metadata such as the MIME type of the image.
+"""
 import base64
 from llmcli.messages.message import Message
 from llmcli.util import get_mime_type, normalize_path
 
 class ImageMessage(Message):
+    """
+    Represents a message containing image content.
+
+    Parameters
+    ----------
+    image_path : str | None
+        The path to the image file.
+    image_content : str | None
+        The base64-encoded content of the image.
+    image_type : str | None
+        The MIME type of the image.
+    """
+
     def __init__(
         self,
         image_path: str = None,
@@ -18,6 +38,19 @@ class ImageMessage(Message):
         self.load_files()
 
     def load_files(self) -> None:
+        """
+        Loads the image content and MIME type if an image path is provided.
+
+        If `image_path` is specified, the image is read, and its content is
+        base64-encoded and stored in `image_content`. The MIME type is
+        determined and stored in `image_type`. The `content` attribute is
+        updated to indicate that the image content is hidden.
+
+        Raises
+        ------
+        FileNotFoundError
+            If the image file at `image_path` does not exist.
+        """
         if self.image_path is None:
             return
 

@@ -1,3 +1,11 @@
+"""
+This module provides the AnthropicApiAdapter class, which integrates with the Anthropic API
+to generate completions and handle streaming responses.
+
+The adapter supports configuration options such as model selection, API key, and generation
+parameters like max tokens, temperature, and top-p sampling.
+"""
+
 import os
 
 from typing import Iterable, Tuple
@@ -11,6 +19,27 @@ from llmcli.messages.image_message import ImageMessage
 
 
 class AnthropicApiAdapter(BaseApiAdapter):
+    """
+    Adapter for interacting with the Anthropic API.
+
+    Attributes
+    ----------
+    NAME : str
+        The identifier for the adapter.
+    HR_NAME : str
+        The human-readable name for the adapter.
+    EXTRA_HELP : str
+        Additional help text for the adapter.
+    MASKED_OPTIONS : set
+        Configuration options that should be masked in logs or outputs.
+    OPTIONS : list[ApiAdapterOption]
+        List of configuration options supported by the adapter.
+
+    Parameters
+    ----------
+    params : dict
+        A dictionary of configuration parameters for the adapter.
+    """
     NAME = "anthropic"
     HR_NAME = "Anthropic"
     EXTRA_HELP = (
@@ -56,8 +85,24 @@ class AnthropicApiAdapter(BaseApiAdapter):
 
     @staticmethod
     def output_stream(
-        response_stream: anthropic.Stream, response_message: Message
+        response_stream: anthropic.Stream,
+        response_message: Message,
     ) -> Iterable[str]:
+        """
+        Process the streaming response from the Anthropic API.
+
+        Parameters
+        ----------
+        response_stream : anthropic.Stream
+            The streaming response object from the API.
+        response_message : Message
+            The message object to update with the response content.
+
+        Yields
+        ------
+        str
+            Fragments of the response content as they are received.
+        """
         for chunk in response_stream:
             if chunk.type != "content_block_delta" or chunk.delta.type != "text_delta":
                 continue
@@ -67,8 +112,30 @@ class AnthropicApiAdapter(BaseApiAdapter):
             yield fragment
 
     def get_completion(
-        self, input_messages: list[Message]
+        self,
+        input_messages: list[Message],
     ) -> Tuple[Iterable[str] | None, Message]:
+        """
+        Generate a completion using the Anthropic API.
+
+        Parameters
+        ----------
+        input_messages : list[Message]
+            A list of input messages to send to the API.
+
+        Returns
+        -------
+        stream : Iterable[str] | None
+            Text output stream.
+        message : Message
+            The Message object with metadata. (See Notes for important information.)
+
+        Notes
+        -----
+        The `content` field of the returned Message object should not be to be considered fully
+        populated until the Iterable is fully consumed.
+        The Anthropic API requires consecutive messages of the same role to be merged.
+        """
         messages = []
 
         for message in input_messages:

@@ -1,3 +1,11 @@
+"""
+This module provides the OpenAiApiAdapter class, which integrates with the OpenAI API
+to generate completions and handle streaming responses.
+
+The adapter supports configuration options such as model selection, API key, and generation
+parameters like max tokens, temperature, top-p sampling, and penalties for frequency and presence.
+"""
+
 import os
 from typing import Iterable, Tuple
 
@@ -12,6 +20,27 @@ from llmcli.messages.image_message import ImageMessage
 
 
 class OpenAiApiAdapter(BaseApiAdapter):
+    """
+    Adapter for interacting with the OpenAI API.
+
+    Attributes
+    ----------
+    NAME : str
+        The identifier for the adapter.
+    HR_NAME : str
+        The human-readable name for the adapter.
+    EXTRA_HELP : str
+        Additional help text for the adapter.
+    MASKED_OPTIONS : list
+        Configuration options that should be masked in logs or outputs.
+    OPTIONS : list[ApiAdapterOption]
+        List of configuration options supported by the adapter.
+
+    Parameters
+    ----------
+    params : dict
+        A dictionary of configuration parameters for the adapter.
+    """
     NAME = "openai"
     HR_NAME = "OpenAI"
     EXTRA_HELP = "By default, uses the OpenAI API key from the environment variable OPENAI_API_KEY."
@@ -64,6 +93,14 @@ class OpenAiApiAdapter(BaseApiAdapter):
     SAFE_MAX_TOKENS = 1000
 
     def __init__(self, params):
+        """
+        Initialize the OpenAiApiAdapter with the given parameters.
+
+        Parameters
+        ----------
+        params : dict
+            A dictionary of configuration parameters for the adapter.
+        """
         super().__init__(params)
         self.client = OpenAI(api_key=self.get_config('api_key'))
 
@@ -71,6 +108,21 @@ class OpenAiApiAdapter(BaseApiAdapter):
     def output_stream(
         response_stream: Stream[ChatCompletionChunk], response_message: Message
     ) -> Iterable[str]:
+        """
+        Process the streaming response from the OpenAI API.
+
+        Parameters
+        ----------
+        response_stream : Stream[ChatCompletionChunk]
+            The streaming response object from the API.
+        response_message : Message
+            The message object to update with the response content.
+
+        Yields
+        ------
+        str
+            Fragments of the response content as they are received.
+        """
         for chunk in response_stream:
             fragment = chunk.choices[0].delta.content
 
@@ -83,6 +135,26 @@ class OpenAiApiAdapter(BaseApiAdapter):
     def get_completion(
         self, input_messages: list[Message]
     ) -> Tuple[Iterable[str] | None, Message]:
+        """
+        Generate a completion using the OpenAI API.
+
+        Parameters
+        ----------
+        input_messages : list[Message]
+            A list of input messages to send to the API.
+
+        Returns
+        -------
+        stream : Iterable[str] | None
+            Text output stream.
+        message : Message
+            The Message object with metadata. (See Notes for important information.)
+
+        Notes
+        -----
+        The `content` field of the returned Message object should not be considered fully
+        populated until the Iterable is fully consumed.
+        """
         messages = []
         max_tokens = self.get_config('max_tokens', cast=int)
 

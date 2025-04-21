@@ -9,9 +9,9 @@ from prompt_toolkit import prompt
 from prompt_toolkit.key_binding import KeyBindings
 
 from llmcli.args import get_args
-from llmcli.util import parse_api_params, normalize_path
+from llmcli.util import normalize_path
 from llmcli.help import print_help, INTERACTIVE_KEYS
-from llmcli.adapters import get_api_adapter, get_adapter_list
+from llmcli.adapters import get_api_adapter, get_adapter_list, parse_api_params
 from llmcli.messages.message import Message
 from llmcli.messages.file_message import FileMessage
 from llmcli.messages.image_message import ImageMessage
@@ -79,8 +79,8 @@ class LlmCli:
 
     def add_chat_message(
         self,
+        message: Message,
         stream: Iterable[str] = None,
-        message: Message = Message(),
         silent: bool = False,
     ) -> None:
         if not silent:
@@ -242,6 +242,9 @@ class LlmCli:
         )
 
     def change_json_log_file(self) -> None:
+        """
+        Prompt the user to change the JSON log file path.
+        """
         json_log_file = prompt(
             "Enter JSON log file path (leave blank to disable logging): ",
             default=self.json_log_file or "",
