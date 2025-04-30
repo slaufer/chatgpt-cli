@@ -180,11 +180,11 @@ class LlmCli:
 
     def add_file(self) -> None:
         user_input = prompt("Enter file path: ")
-        self.add_chat_message(message=Message(role="user", file_path=normalize_path(user_input)))
+        self.add_chat_message(message=FileMessage(role="user", file_path=normalize_path(user_input)))
 
     def add_image(self) -> None:
         user_input = prompt("Enter image path: ")
-        self.add_chat_message(message=Message(role="user", image_path=normalize_path(user_input)))
+        self.add_chat_message(message=ImageMessage(role="user", image_path=normalize_path(user_input)))
 
     def change_api_adapter_name(self) -> None:
         print("\nAvailable API Adapters:")
@@ -339,7 +339,7 @@ class LlmCli:
         if not self.interactive:
             response_stream, response_message = self.get_completion()
             for fragment in response_stream:
-                print(fragment, end="")
+                print(fragment, end="", flush=True)
             self.add_chat_message(stream=response_stream, message=response_message, silent=True)
             self.log_json()
             return
