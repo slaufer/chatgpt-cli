@@ -218,9 +218,9 @@ class LlmCli:
             for i, option in enumerate(self.api_adapter_options):
                 print(f"[{i+2}] Remove {option}")
 
-            user_input = prompt("\nEnter selection: ")
+            user_input = prompt("\nEnter selection [exit menu]: ")
 
-            if user_input == "":
+            if user_input.strip() == "":
                 break
 
             try:
@@ -246,7 +246,7 @@ class LlmCli:
         Prompt the user to change the JSON log file path.
         """
         json_log_file = prompt(
-            "Enter JSON log file path (leave blank to disable logging): ",
+            "Enter JSON log file path [None]: ",
             default=self.json_log_file or "",
         )
 
@@ -271,9 +271,9 @@ class LlmCli:
             for i, opt in enumerate(opts):
                 print(f"[{i+1}] {opt[0]}")
 
-            user_input = prompt("\nEnter selection: ")
+            user_input = prompt("\nEnter selection [exit menu]: ")
 
-            if user_input == "":
+            if user_input.strip() == "":
                 break
 
             try:
@@ -303,7 +303,11 @@ class LlmCli:
 
             try:
                 if user_input_type == "text":
-                    if user_input != "":
+                    if user_input.strip() == "/menu":
+                        self.menu()
+                        continue
+
+                    if user_input.strip() != "":
                         self.add_chat_message(
                             message=Message(role="user", content=user_input),
                             silent=True,
